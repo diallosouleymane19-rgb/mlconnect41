@@ -6,6 +6,10 @@
   NODE_VERSION        = "18"
   SECRETS_SCAN_ENABLED = "false"
 
+# v52 : installe les dependances coeur des fonctions (@netlify/blobs pour le rate limiting distribue)
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
 [[headers]]
   for = "/*"
   [headers.values]
