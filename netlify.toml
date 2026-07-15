@@ -1,0 +1,41 @@
+[build]
+  publish   = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION        = "18"
+  SECRETS_SCAN_ENABLED = "false"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options       = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy       = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/OneSignalSDKWorker.js"
+  [headers.values]
+    Service-Worker-Allowed = "/"
+    Content-Type           = "application/javascript; charset=utf-8"
+    Cache-Control          = "no-cache"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+
+# Phase 3 — Commissions Stripe (valeurs par défaut, overridables dans Netlify UI)
+[context.production.environment]
+  COMMISSION_TAXI    = "0.10"
+  COMMISSION_VTC     = "0.12"
+  COMMISSION_MEDICAL = "0.08"
+
+# Bloc 3 — Rapport mensuel commissions (1er du mois à 02:00 UTC)
+[functions."payout-report"]
+  schedule = "0 2 1 * *"
