@@ -2,7 +2,7 @@
 // Cache App Shell pour chargement rapide + fonctionnement hors-ligne minimal
 // v9 : force cache refresh apres correctifs Phase 2
 
-const CACHE  = 'mlc41-transporteur-v18';
+const CACHE  = 'mlc41-transporteur-v19';
 const ASSETS = ['/', '/index.html', '/style.css', '/js/app.js', '/manifest.json'];
 
 self.addEventListener('install', (evt) => {
