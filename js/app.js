@@ -4,13 +4,16 @@
 
 'use strict';
 
-const APP_VERSION = 'v9';
+const APP_VERSION = 'v10';
 const API         = '/.netlify/functions';
 const OS_APP_ID   = '58ea61f3-139f-4f2a-9083-402d7c8b34cc';
 const STRIPE_PK   = 'pk_live_51TdciAEN9yUrhHVf3yafeqhI4O6q4UCkUr5OfAK5Y6rTnh7IoluR7ZaRjQqYQsE88oevPs6MQegQYjAy83CiyS3p00fxfNmT5H';
 
 // Session en mémoire (sessionStorage pour persistance onglet)
 let SESSION = null;
+
+// v51 sécurité : échappement HTML anti-XSS stocké (données usager non fiables)
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
 
 // ════════════════════════════════════════════════════════════
 // INITIALISATION
@@ -308,12 +311,12 @@ function buildAvailableCard(c) {
     ${type ? `<span class="badge badge-type">${type}</span>` : ''}
   </div>
   <div class="card-body">
-    <div class="row-info">📅 ${c.date} · ${c.heure}</div>
+    <div class="row-info">📅 ${esc(c.date)} · ${esc(c.heure)}</div>
     <div class="row-trajet">
-      <div class="trajet-from">🟢 ${c.depart}</div>
-      <div class="trajet-to">🔴 ${c.arrivee}</div>
+      <div class="trajet-from">🟢 ${esc(c.depart)}</div>
+      <div class="trajet-to">🔴 ${esc(c.arrivee)}</div>
     </div>
-    ${c.motif ? `<div class="row-info">📋 ${c.motif}</div>` : ''}
+    ${c.motif ? `<div class="row-info">📋 ${esc(c.motif)}</div>` : ''}
   </div>
   <div class="card-actions">
     <button class="btn btn-accept" onclick="acceptCourse('${c.id}')">✅ Accepter cette course</button>
@@ -376,14 +379,14 @@ function buildCourseCard(c) {
     <span class="badge badge-${statutClass}">${badgeLabel}</span>
   </div>
   <div class="card-body">
-    <div class="row-info">📅 ${c.date}${c.heure ? ' · ' + c.heure : ''}</div>
-    <div class="row-info">👤 <strong>${c.passager || ''}</strong>${c.tel_passager ? ' — ' + c.tel_passager : ''}</div>
+    <div class="row-info">📅 ${esc(c.date)}${c.heure ? ' · ' + esc(c.heure) : ''}</div>
+    <div class="row-info">👤 <strong>${esc(c.passager)}</strong>${c.tel_passager ? ' — ' + esc(c.tel_passager) : ''}</div>
     <div class="row-trajet">
-      <div class="trajet-from">🟢 ${c.depart}</div>
-      <div class="trajet-to">🔴 ${c.arrivee}</div>
+      <div class="trajet-from">🟢 ${esc(c.depart)}</div>
+      <div class="trajet-to">🔴 ${esc(c.arrivee)}</div>
     </div>
     ${c.prix ? `<div class="row-prix">💰 Estimé : ${parseFloat(c.prix).toFixed(2)} €</div>` : ''}
-    ${c.notes ? `<div class="row-notes">📝 ${c.notes}</div>` : ''}
+    ${c.notes ? `<div class="row-notes">📝 ${esc(c.notes)}</div>` : ''}
   </div>
   ${actions ? `<div class="card-actions">${actions}</div>` : ''}
 </article>`;
@@ -717,12 +720,12 @@ async function uTrack() {
     var tel = data.transporteur_tel || '';
     resultEl.innerHTML =
       '<div class="track-statut">' + (statutLabel[data.statut] || data.statut) + '</div>' +
-      '<div class="track-row"><span class="track-label">Ref :</span><span>' + data.ref + '</span></div>' +
-      '<div class="track-row"><span class="track-label">Date :</span><span>' + data.date + ' a ' + data.heure + '</span></div>' +
-      '<div class="track-row"><span class="track-label">Depart :</span><span>' + data.depart + '</span></div>' +
-      '<div class="track-row"><span class="track-label">Arrivee :</span><span>' + data.arrivee + '</span></div>' +
-      (data.motif ? '<div class="track-row"><span class="track-label">Motif :</span><span>' + data.motif + '</span></div>' : '') +
-      (data.transporteur_nom ? '<div class="track-row"><span class="track-label">Taxi :</span><span>' + data.transporteur_nom + '</span></div>' : '') +
+      '<div class="track-row"><span class="track-label">Ref :</span><span>' + esc(data.ref) + '</span></div>' +
+      '<div class="track-row"><span class="track-label">Date :</span><span>' + esc(data.date) + ' a ' + esc(data.heure) + '</span></div>' +
+      '<div class="track-row"><span class="track-label">Depart :</span><span>' + esc(data.depart) + '</span></div>' +
+      '<div class="track-row"><span class="track-label">Arrivee :</span><span>' + esc(data.arrivee) + '</span></div>' +
+      (data.motif ? '<div class="track-row"><span class="track-label">Motif :</span><span>' + esc(data.motif) + '</span></div>' : '') +
+      (data.transporteur_nom ? '<div class="track-row"><span class="track-label">Taxi :</span><span>' + esc(data.transporteur_nom) + '</span></div>' : '') +
       (tel ? '<div class="track-row"><span class="track-label">Tel :</span><a href="tel:' + tel + '" class="track-tel">' + tel + '</a></div>' : '') +
       (data.notes ? '<div class="track-row"><span class="track-label">Note :</span><span>' + data.notes + '</span></div>' : '');
     resultEl.hidden = false;
@@ -816,12 +819,12 @@ function adminRenderCourses() {
     }
     return '<div class="admin-card">' +
       '<div class="admin-card-top"><span class="badge badge-' + c.statut.replace('_','-') + '">' + (STATUT[c.statut]||c.statut) + '</span>' +
-      '<span class="admin-card-ref">' + (c.ref||c.id) + '</span></div>' +
-      '<div class="admin-card-passager">' + (c.passager||'—') + ' · ' + (c.tel||'—') + '</div>' +
-      '<div class="admin-card-info">📅 ' + c.date + ' ' + c.heure + '</div>' +
-      '<div class="admin-card-info">📍 ' + c.depart + '</div>' +
-      '<div class="admin-card-info">🏥 ' + c.arrivee + '</div>' +
-      (c.transporteur_id ? '<div class="admin-card-info">🚗 ' + c.transporteur_id + '</div>' : '') +
+      '<span class="admin-card-ref">' + esc(c.ref||c.id) + '</span></div>' +
+      '<div class="admin-card-passager">' + esc(c.passager||'—') + ' · ' + esc(c.tel||'—') + '</div>' +
+      '<div class="admin-card-info">📅 ' + esc(c.date) + ' ' + esc(c.heure) + '</div>' +
+      '<div class="admin-card-info">📍 ' + esc(c.depart) + '</div>' +
+      '<div class="admin-card-info">🏥 ' + esc(c.arrivee) + '</div>' +
+      (c.transporteur_id ? '<div class="admin-card-info">🚗 ' + esc(c.transporteur_id) + '</div>' : '') +
       (btns ? '<div class="admin-card-actions">' + btns + '</div>' : '') +
       '</div>';
   }).join('');
@@ -846,8 +849,8 @@ function adminRenderTransporteurs() {
   el.innerHTML = ADMIN_TRANSPORTEURS.map(function(t) {
     return '<div class="t-card">' +
       '<div class="t-card-dot' + (t.actif ? '' : ' off') + '"></div>' +
-      '<div class="t-card-info"><div class="t-card-nom">' + t.nom + '</div>' +
-      '<div class="t-card-detail">' + t.id + ' · ' + t.type + ' · ' + t.commune + '</div></div>' +
+      '<div class="t-card-info"><div class="t-card-nom">' + esc(t.nom) + '</div>' +
+      '<div class="t-card-detail">' + esc(t.id) + ' · ' + esc(t.type) + ' · ' + esc(t.commune) + '</div></div>' +
       (t.tel ? '<a href="tel:' + t.tel + '" class="t-card-tel">' + t.tel + '</a>' : '') +
       '</div>';
   }).join('');
@@ -866,7 +869,7 @@ function adminOpenAssign(courseId, passager) {
 function adminFillSelect(sel) {
   sel.innerHTML = '<option value="">-- Choisir --</option>' +
     ADMIN_TRANSPORTEURS.filter(function(t){ return t.actif; }).map(function(t) {
-      return '<option value="' + t.id + '">' + t.nom + ' (' + t.type + ' - ' + t.commune + ')</option>';
+      return '<option value="' + esc(t.id) + '">' + esc(t.nom) + ' (' + esc(t.type) + ' - ' + esc(t.commune) + ')</option>';
     }).join('');
 }
 
