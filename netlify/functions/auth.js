@@ -1,7 +1,7 @@
 'use strict';
 // auth.js — Login transporteur par PIN — MobiLoireConnect41 v41
 // Lit jusqu'à la colonne M pour inclure stripe_account_id (col M = index 12)
-const { sheetsGet, createSession, ok, err, preflight, getClientIp, rateLimited, rateFail, rateReset } = require('./utils');
+const { sheetsGet, createSession, ok, err, preflight, getClientIp, rateGate, rateBump, rateClear } = require('./utils');
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return preflight();
@@ -15,9 +15,10 @@ exports.handler = async (event) => {
   var pin = (body.pin || '').trim();
   if (!id || !pin) return err(400, 'Champs id et pin requis');
 
-  // R3 v50 : rate limiting 5 tentatives / 15 min / IP
+  // v52 : rate limiting distribue (Netlify Blobs) 5 tentatives / 15 min / IP
   var ip = getClientIp(event);
-  if (rateLimited(ip)) return err(429, 'Trop de tentatives. Reessayez dans 15 minutes.');
+  var rgate = await rateGate(ip, 'auth');
+  if (rgate.limited) return err(429, 'Trop de tentatives. Reessayez dans 15 minutes.');
 
   try {
     var rows = await sheetsGet('T1-Transporteurs!A:M'); // Étendu jusqu'à M (stripe_account_id)
@@ -30,9 +31,9 @@ exports.handler = async (event) => {
              (r[11] || '').trim() === pin;
     });
 
-    if (!found) { rateFail(ip); return err(401, 'Identifiant ou PIN incorrect'); }
+    if (!found) { await rateBump(rgate); return err(401, 'Identifiant ou PIN incorrect'); }
 
-    rateReset(ip);
+    await rateClear(rgate);
     var stripe_account_id = (found[12] || '').trim(); // col M
 
     var token = createSession({

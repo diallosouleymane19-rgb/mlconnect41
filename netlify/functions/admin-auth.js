@@ -28,16 +28,17 @@ exports.handler = async function(event) {
   try { body = JSON.parse(event.body || '{}'); } catch(e) { return utils.err(400, 'JSON invalide'); }
 
   var ip = utils.getClientIp(event);
-  if (utils.rateLimited(ip)) return utils.err(429, 'Trop de tentatives. Reessayez dans 15 minutes.');
+  var rgate = await utils.rateGate(ip, 'admin-auth');
+  if (rgate.limited) return utils.err(429, 'Trop de tentatives. Reessayez dans 15 minutes.');
 
   var id  = (body.id  || '').trim();
   var pin = (body.pin || '').trim();
   var adminId = process.env.ADMIN_ID || 'ADMIN';
   if (id.toUpperCase() !== adminId.toUpperCase() || !verifyPin(pin)) {
-    utils.rateFail(ip);
+    await utils.rateBump(rgate);
     return utils.err(401, 'Identifiant ou PIN incorrect');
   }
-  utils.rateReset(ip);
+  await utils.rateClear(rgate);
   var token = utils.createSession({ id: adminId, role: 'admin', nom: 'Administrateur' });
   return utils.ok({ token: token, nom: 'Administrateur', role: 'admin' });
 };

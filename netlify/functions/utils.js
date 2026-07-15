@@ -184,6 +184,60 @@ function rateFail(ip) {
 
 function rateReset(ip) { rateMap.delete(ip); }
 
+// v52 : rate limiting distribué via Netlify Blobs (compteur partagé entre conteneurs).
+// Repli automatique sur le compteur mémoire si Blobs indisponible → le login ne casse jamais.
+var _rlStore;
+function rlStore() {
+  if (_rlStore !== undefined) return _rlStore;
+  try {
+    var blobs = require('@netlify/blobs');
+    _rlStore = blobs.getStore({ name: 'rate-limits', consistency: 'strong' });
+  } catch (e) {
+    console.warn('[rate] Netlify Blobs indisponible, repli memoire:', e.message);
+    _rlStore = null;
+  }
+  return _rlStore;
+}
+
+// Ouvre une « porte » : renvoie { limited, ctx }. ctx sert aux bump/clear.
+async function rateGate(ip, name) {
+  var store = rlStore();
+  if (!store) return { limited: rateLimited(ip), ctx: { mem: true, ip: ip } };
+  var key = name + ':' + ip;
+  try {
+    var rec = await store.get(key, { type: 'json' });
+    var now = Date.now();
+    if (rec && (now - rec.start) <= RATE_WINDOW && rec.count >= RATE_MAX) {
+      return { limited: true, ctx: { key: key, rec: rec, now: now, ip: ip } };
+    }
+    return { limited: false, ctx: { key: key, rec: rec, now: now, ip: ip } };
+  } catch (e) {
+    return { limited: rateLimited(ip), ctx: { mem: true, ip: ip } };
+  }
+}
+
+// Enregistre un echec (tentative ratee)
+async function rateBump(ctx) {
+  if (!ctx || ctx.mem) { rateFail(ctx ? ctx.ip : 'unknown'); return; }
+  var store = rlStore();
+  if (!store) { rateFail(ctx.ip); return; }
+  try {
+    var rec = ctx.rec;
+    if (!rec || (ctx.now - rec.start) > RATE_WINDOW) rec = { start: ctx.now, count: 0 };
+    rec.count++;
+    await store.setJSON(ctx.key, rec);
+  } catch (e) { rateFail(ctx.ip); }
+}
+
+// Reinitialise (login reussi)
+async function rateClear(ctx) {
+  if (!ctx) return;
+  if (ctx.mem) { rateReset(ctx.ip); return; }
+  var store = rlStore();
+  if (store && ctx.key) { try { await store.delete(ctx.key); } catch (e) {} }
+  rateReset(ctx.ip);
+}
+
 // HTTP helpers
 var CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -200,5 +254,6 @@ module.exports = {
   sheetsGet, sheetsUpdate, sheetsAppend, sheetsUpdateCell,
   createSession, verifySession,
   ok, err, preflight,
-  getClientIp, rateLimited, rateFail, rateReset
+  getClientIp, rateLimited, rateFail, rateReset,
+  rateGate, rateBump, rateClear
 };
