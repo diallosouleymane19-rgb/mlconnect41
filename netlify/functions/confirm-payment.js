@@ -53,10 +53,23 @@ exports.handler = async function(event) {
     return utils.err(400, 'Payment Intent non capturable — statut : ' + pi.status);
   }
 
+  // v51 sécurité : le PI doit appartenir au transporteur connecté (anti-IDOR)
+  var piMeta = pi.metadata || {};
+  if ((piMeta.transporteur_id || '') !== (session.id || '')) {
+    return utils.err(403, 'Ce paiement ne vous appartient pas');
+  }
+  // v51 sécurité : le PI doit correspondre à la course annoncée
+  if ((piMeta.course_id || '') !== courseId) {
+    return utils.err(400, 'Incohérence course / paiement');
+  }
+
   // 2. Capture (avec ajustement montant si différent de l'estimé)
+  // v51 : le montant capturé ne peut jamais DÉPASSER le montant autorisé (Stripe l'exige déjà,
+  // on borne aussi côté serveur pour éviter toute incohérence — ajustement à la baisse uniquement)
   var captureData = {};
   if (montant_final > 0) {
     var montant_final_cents = Math.round(montant_final * 100);
+    if (montant_final_cents > pi.amount) montant_final_cents = pi.amount;
     if (montant_final_cents !== pi.amount) {
       captureData['amount_to_capture'] = montant_final_cents;
     }

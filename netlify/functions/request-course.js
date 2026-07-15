@@ -44,7 +44,7 @@ exports.handler = async function(event) {
     ]]);
 
     // Broadcast OneSignal a tous les transporteurs abonnes
-    var osKey = process.env.ONESIGNAL_API_KEY;
+    var osKey = process.env.ONESIGNAL_REST_API_KEY || process.env.ONESIGNAL_API_KEY;
     var osApp = process.env.ONESIGNAL_APP_ID;
     if (osKey && osApp) {
       try {

@@ -12,12 +12,13 @@ exports.handler = async function(event) {
       return (r[11]||'  ').trim().toUpperCase() === ref.trim().toUpperCase();
     });
     if (!found) return utils.err(404, 'Reference introuvable');
+    // v51 sécurité : ne renvoie PAS le tel passager ni le motif médical
+    // (protège contre le brute-force de références — RGPD/données de santé)
     var result = {
-      id:r[0]||'', date:found[1]||'', heure:found[2]||'',
-      passager:found[3]||'', tel:found[4]||'',
+      id:found[0]||'', date:found[1]||'', heure:found[2]||'',
       depart:found[5]||'', arrivee:found[6]||'',
-      statut:found[7]||'en_attente', transporteur_id:found[8]||'',
-      notes:found[10]||'', ref:found[11]||'', motif:found[12]||''
+      statut:found[7]||'en_attente',
+      ref:found[11]||''
     };
     if (result.transporteur_id) {
       var tRows = await utils.sheetsGet('T1-Transporteurs!A:L');

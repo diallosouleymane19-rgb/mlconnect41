@@ -14,12 +14,11 @@ exports.handler = async function(event) {
   // ── GET : lecture de T4-Commissions pour affichage admin ──
   if (method === 'GET') {
     // Validation token admin (optionnel mais recommandé)
-    var token = qs.token || '';
-    if (token) {
-      try { utils.verifySession(token); } catch(e) {
-        return { statusCode: 401, body: JSON.stringify({ error: 'Token invalide' }) };
-      }
-    }
+    // v51 sécurité : token admin OBLIGATOIRE (données financières)
+    var sGet;
+    try { sGet = utils.verifySession(qs.token || ''); }
+    catch(e) { return { statusCode: 401, body: JSON.stringify({ error: 'Token requis' }) }; }
+    if (sGet.role !== 'admin') return { statusCode: 403, body: JSON.stringify({ error: 'Acces refuse' }) };
     var mois = qs.mois || getLastMonthStr(now);
     try {
       var t4Rows = await utils.sheetsGet('T4-Commissions!A:H');
@@ -54,11 +53,13 @@ exports.handler = async function(event) {
   var body = {};
   try { body = JSON.parse(event.body || '{}'); } catch {}
 
-  // Validation token admin si appel manuel
-  if (body.token) {
-    try { utils.verifySession(body.token); } catch(e) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Token invalide' }) };
-    }
+  // v51 sécurité : appel manuel réservé admin (l'exécution planifiée Netlify n'a pas de body.token → autorisée)
+  var isScheduled = !event.body || event.body === '{}';
+  if (!isScheduled) {
+    var sPost;
+    try { sPost = utils.verifySession(body.token || ''); }
+    catch(e) { return { statusCode: 401, body: JSON.stringify({ error: 'Token requis' }) }; }
+    if (sPost.role !== 'admin') return { statusCode: 403, body: JSON.stringify({ error: 'Acces refuse' }) };
   }
 
   var mois = body.mois || getLastMonthStr(now);

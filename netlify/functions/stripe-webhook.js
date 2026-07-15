@@ -114,8 +114,10 @@ exports.handler = async function(event) {
     console.error('[webhook] Signature invalide');
     return { statusCode: 400, body: 'Signature invalide' };
   }
+  // v51 sécurité : refuser tout si aucun secret configuré (fail-closed)
   if (!secret && !secretConnect) {
-    console.warn('[webhook] Aucun STRIPE_WEBHOOK_SECRET configuré — mode non sécurisé');
+    console.error('[webhook] Aucun STRIPE_WEBHOOK_SECRET configuré — rejet');
+    return { statusCode: 500, body: 'Webhook non configuré' };
   }
 
   var stripeEvent;

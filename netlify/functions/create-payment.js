@@ -59,9 +59,36 @@ exports.handler = async function(event) {
     medical: parseFloat(process.env.COMMISSION_MEDICAL || '0.08')
   };
 
+  // v51 sécurité : plafond serveur anti-fraude sur le montant fourni par le client
+  var MONTANT_MAX = parseFloat(process.env.MONTANT_MAX_EUR || '1500');
+  if (montant_estime > MONTANT_MAX) return utils.err(400, 'Montant hors bornes (max ' + MONTANT_MAX + ' €)');
+
   var taux             = COMMISSIONS[type_transporteur];
   var montant_cents    = Math.round(montant_estime * 100);
   var commission_cents = Math.round(montant_cents * taux);
+
+  // v51 fiabilité : idempotence — si un PaymentIntent capturable existe déjà pour cette course, on le réutilise
+  try {
+    var pRows = await utils.sheetsGet('T3-Courses!A:P');
+    for (var pk = 1; pk < (pRows || []).length; pk++) {
+      if ((pRows[pk][0] || '') === courseId) {
+        var existingPi = (pRows[pk][15] || '').trim(); // col P
+        if (existingPi) {
+          var chk = await stripeRequest('GET', '/payment_intents/' + existingPi, null, sk);
+          if (chk && chk.id && chk.status === 'requires_payment_method' || (chk && chk.status === 'requires_capture') || (chk && chk.status === 'requires_confirmation')) {
+            return utils.ok({
+              payment_intent_id: chk.id, client_secret: chk.client_secret,
+              montant_estime: montant_estime, commission_smd: commission_cents/100,
+              reversement_transporteur: (montant_cents-commission_cents)/100,
+              stripe_connect: false, statut: 'reutilise',
+              mode: sk.startsWith('sk_live') ? 'LIVE' : 'TEST'
+            });
+          }
+        }
+        break;
+      }
+    }
+  } catch(e) { console.warn('[create-payment] idempotence check:', e.message); }
 
   // Payment Intent simple — compte plateforme SMD (sans transfer_data ni application_fee)
   var pi;
