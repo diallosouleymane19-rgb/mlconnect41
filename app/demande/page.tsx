@@ -7,6 +7,7 @@ interface Address {
   longitude: number
   numero: number
   rue: string
+  commune: string
 }
 
 export default function Page() {
@@ -17,9 +18,9 @@ export default function Page() {
 
   const selectAdresse = (type: string, a: Address) => {
     if (type === 'depart') {
-      setDepart({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue })
+      setDepart({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue + ', ' + a.commune })
     } else {
-      setDest({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue })
+      setDest({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue + ', ' + a.commune })
       calcDistance(depart, { lat: a.latitude, lng: a.longitude })
     }
   }
@@ -35,19 +36,36 @@ export default function Page() {
       const data = await res.json()
       setDistance(data.distance)
       setPrice(data.price)
-    } catch (e) {
-      console.error(e)
-    }
+    } catch (e) { console.error(e) }
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Demande de Course</h1>
-      <AdresseAutocomplete label="Depart" placeholder="Chercher..." onSelect={(a) => selectAdresse('depart', a)} />
-      <p className="text-sm mt-1">{depart.text}</p>
-      <AdresseAutocomplete label="Destination" placeholder="Chercher..." onSelect={(a) => selectAdresse('destination', a)} />
-      <p className="text-sm mt-1">{dest.text}</p>
-      {distance && <div className="bg-blue-50 p-4 rounded-lg mt-4"><p>Distance: {distance.toFixed(1)} km</p><p className="font-bold">Prix: {price?.toFixed(2)} EUR</p></div>}
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #1a4a6e 0%, #123152 60%, #0d2340 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif' }}>
+      <div style={{ width: '100%', maxWidth: 480 }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h1 style={{ color: '#fff', fontSize: 26, margin: 0 }}>Demande de Course</h1>
+          <p style={{ color: '#9fc3e8', fontSize: 14, marginTop: 6 }}>Transport médical · Loir-et-Cher (41)</p>
+        </div>
+
+        <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 18, padding: 24, boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+          <AdresseAutocomplete label="Adresse de départ" placeholder="Chercher une adresse..." onSelect={(a) => selectAdresse('depart', a)} />
+          {depart.text && <p style={{ color: '#7ee0a3', fontSize: 13, margin: '0 0 14px' }}>✓ {depart.text}</p>}
+
+          <AdresseAutocomplete label="Destination" placeholder="Chercher une adresse..." onSelect={(a) => selectAdresse('destination', a)} />
+          {dest.text && <p style={{ color: '#7ee0a3', fontSize: 13, margin: '0 0 14px' }}>✓ {dest.text}</p>}
+
+          {distance !== null && price !== null && (
+            <div style={{ background: 'rgba(126,224,163,0.12)', border: '1px solid rgba(126,224,163,0.4)', borderRadius: 12, padding: 16, marginTop: 8 }}>
+              <p style={{ color: '#cfe3f5', fontSize: 14, margin: 0 }}>Distance : <strong>{distance.toFixed(1)} km</strong></p>
+              <p style={{ color: '#7ee0a3', fontSize: 20, fontWeight: 700, margin: '6px 0 0' }}>Prix estimé : {price.toFixed(2)} €</p>
+            </div>
+          )}
+        </div>
+
+        <p style={{ textAlign: 'center', color: '#6f93b8', fontSize: 12, marginTop: 20 }}>
+          <a href="/" style={{ color: '#9fc3e8' }}>← Retour à l'accueil</a>
+        </p>
+      </div>
     </div>
   )
 }
