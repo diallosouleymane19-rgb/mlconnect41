@@ -1,6 +1,36 @@
-/* Autocomplete adresses 41 + calcul distance auto — MobiLoireConnect41 */
+/* Autocomplete adresses 41 + calcul distance auto — MobiLoireConnect41
+ * v2 — corrections :
+ *  - Desactive le calcul de distance "legacy" de app.js (blur -> Nominatim/OSRM)
+ *    qui ecrasait uKm avec une distance geocodee sur une mauvaise commune (bug 750 km).
+ *  - Ecrase TOUJOURS uKm a chaque nouvelle paire d'adresses selectionnees.
+ *  - Indicateur visuel "Distance calculee automatiquement : X km" sous le champ.
+ *  - Champ uKm en lecture seule pendant le calcul, puis re-modifiable.
+ *  - Anti-course : seule la derniere requete /api/distance est prise en compte.
+ *  - En cas d'echec OSRM : message clair + saisie manuelle laissee possible.
+ */
 (function () {
   var coords = { depart: null, arrivee: null };
+  var requestSeq = 0; // jeton anti-course : seule la reponse la plus recente est appliquee
+
+  /* ── Neutralisation du calcul legacy de app.js (BLOC 4b) ──────────────────
+   * app.js attache onAdresseChange sur le blur de #uDepart/#uArrivee :
+   * il geocode le TEXTE LIBRE via Nominatim (limit=1) puis ecrase uKm 1,2 s
+   * plus tard. "1 Rue de la Mairie" peut matcher n'importe quelle rue de la
+   * Mairie en France -> distances aberrantes (ex. 750 km) qui ecrasent la
+   * valeur correcte calculee ici. On retire ces listeners au demarrage. */
+  function disableLegacyAutoDistance() {
+    try {
+      if (typeof window.onAdresseChange === 'function') {
+        var dep = document.getElementById('uDepart');
+        var dst = document.getElementById('uArrivee');
+        if (dep) dep.removeEventListener('blur', window.onAdresseChange);
+        if (dst) dst.removeEventListener('blur', window.onAdresseChange);
+        // Ceinture + bretelles : toute invocation residuelle devient inoffensive
+        window.onAdresseChange = function () {};
+        if (window._autoDistTimer) clearTimeout(window._autoDistTimer);
+      }
+    } catch (e) { /* non bloquant */ }
+  }
 
   function debounce(fn, ms) {
     var t;
@@ -9,6 +39,38 @@
       clearTimeout(t);
       t = setTimeout(function () { fn.apply(ctx, args); }, ms);
     };
+  }
+
+  /* ── Indicateur visuel sous le champ Distance ─────────────────────────── */
+  function getDistInfo() {
+    var el = document.getElementById('acDistInfo');
+    if (el) return el;
+    var km = document.getElementById('uKm');
+    if (!km || !km.parentElement) return null;
+    el = document.createElement('div');
+    el.id = 'acDistInfo';
+    el.style.cssText = 'margin-top:6px;font-size:13px;line-height:1.4;color:#9fd3ff;';
+    // Insere juste apres le champ uKm (avant uEstimation s'il existe)
+    km.insertAdjacentElement('afterend', el);
+    return el;
+  }
+
+  function setDistInfo(text, kind) {
+    var el = getDistInfo();
+    if (!el) return;
+    if (!text) { el.textContent = ''; el.style.display = 'none'; return; }
+    el.textContent = text;
+    el.style.display = 'block';
+    el.style.color = kind === 'error' ? '#ffb3b3'
+                   : kind === 'busy'  ? '#ffe9a8'
+                   : '#9fd3ff';
+  }
+
+  function setKmLocked(locked) {
+    var km = document.getElementById('uKm');
+    if (!km) return;
+    km.readOnly = !!locked;
+    km.style.opacity = locked ? '0.6' : '';
   }
 
   function makeDropdown(input) {
@@ -28,7 +90,12 @@
 
     var search = debounce(function () {
       var q = input.value.trim();
+      // L'adresse a change : les coordonnees memorisees ne sont plus valides.
       coords[type] = null;
+      // Invalide toute reponse distance en vol et retire l'indicateur "auto"
+      requestSeq++;
+      setKmLocked(false);
+      setDistInfo('');
       if (q.length < 2) { list.style.display = 'none'; return; }
       fetch('/api/adresses/search', {
         method: 'POST',
@@ -70,6 +137,13 @@
 
   function maybeDistance() {
     if (!coords.depart || !coords.arrivee) return;
+    var mySeq = ++requestSeq; // toute reponse plus ancienne sera ignoree
+    var kmField = document.getElementById('uKm');
+
+    // Verrouille le champ pendant le calcul + indicateur
+    setKmLocked(true);
+    setDistInfo('Calcul de la distance en cours…', 'busy');
+
     fetch('/api/distance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -78,21 +152,45 @@
         lat2: coords.arrivee.lat, lng2: coords.arrivee.lng
       })
     })
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function (data) {
-        if (data.distance == null) return;
-        var km = document.getElementById('uKm');
-        if (km) {
-          km.value = Math.max(1, Math.round(data.distance));
-          if (typeof estimateOnChange === 'function') estimateOnChange();
+        if (mySeq !== requestSeq) return; // reponse obsolete (adresse changee entre-temps)
+        setKmLocked(false);
+        if (data == null || data.distance == null || isNaN(data.distance)) {
+          throw new Error('Reponse distance invalide');
+        }
+        var km = Math.max(1, Math.round(data.distance));
+        if (kmField) {
+          // ECRASE TOUJOURS la valeur (manuelle ou ancienne) : la paire
+          // d'adresses selectionnee fait foi.
+          kmField.value = km;
+          setDistInfo('Distance calculee automatiquement : ' + km + ' km (modifiable)', 'ok');
+          if (typeof window.estimateOnChange === 'function') window.estimateOnChange();
         }
       })
-      .catch(function (e) { console.error('Distance error', e); });
+      .catch(function (e) {
+        if (mySeq !== requestSeq) return;
+        console.error('Distance error', e);
+        // Echec OSRM/API : on laisse la saisie manuelle possible
+        setKmLocked(false);
+        setDistInfo('Calcul automatique indisponible — saisissez la distance manuellement.', 'error');
+      });
   }
 
   function init() {
+    disableLegacyAutoDistance();
     attach('uDepart', 'depart');
     attach('uArrivee', 'arrivee');
+    // Si l'usager modifie uKm a la main, on retire le label "automatique"
+    var kmField = document.getElementById('uKm');
+    if (kmField) {
+      kmField.addEventListener('input', function () {
+        if (!kmField.readOnly) setDistInfo('');
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
