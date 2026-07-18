@@ -2,7 +2,7 @@
   command = "npm run build"
   publish = ".next"
 [build.environment]
-  NODE_VERSION        = "18"
+  NODE_VERSION        = "20"
   SECRETS_SCAN_ENABLED = "false"
 
 # v52 : installe les dependances coeur des fonctions (@netlify/blobs pour le rate limiting distribue)
