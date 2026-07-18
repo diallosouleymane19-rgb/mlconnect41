@@ -1,71 +1,73 @@
-'use client'
-import { useState } from 'react'
-import AdresseAutocomplete from '@/components/AdresseAutocomplete'
+'use client';
+import React, { useState, useCallback } from 'react';
 
 interface Address {
-  latitude: number
-  longitude: number
-  numero: number
-  rue: string
-  commune: string
+  id: number;
+  numero: number;
+  rue: string;
+  commune: string;
+  code_postal: string;
+  latitude: number;
+  longitude: number;
 }
 
-export default function Page() {
-  const [depart, setDepart] = useState({ lat: 0, lng: 0, text: '' })
-  const [dest, setDest] = useState({ lat: 0, lng: 0, text: '' })
-  const [distance, setDistance] = useState<number | null>(null)
-  const [price, setPrice] = useState<number | null>(null)
+interface Props {
+  onSelect: (address: Address) => void;
+  label?: string;
+  placeholder?: string;
+}
 
-  const selectAdresse = (type: string, a: Address) => {
-    if (type === 'depart') {
-      setDepart({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue + ', ' + a.commune })
-    } else {
-      setDest({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue + ', ' + a.commune })
-      calcDistance(depart, { lat: a.latitude, lng: a.longitude })
-    }
-  }
+export default function AdresseAutocomplete({ onSelect, label, placeholder }: Props) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const calcDistance = async (dp: any, ds: any) => {
-    if (!dp.lat || !ds.lat) return
+  const handleSearch = useCallback(async (q: string) => {
+    if (q.length < 2) { setResults([]); return; }
+    setLoading(true);
     try {
-      const res = await fetch('/api/distance', {
+      const res = await fetch('/api/adresses/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat1: dp.lat, lng1: dp.lng, lat2: ds.lat, lng2: ds.lng })
-      })
-      const data = await res.json()
-      setDistance(data.distance)
-      setPrice(data.price)
-    } catch (e) { console.error(e) }
-  }
+        body: JSON.stringify({ query: q })
+      });
+      const data = await res.json();
+      setResults(data.results || []);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  }, []);
+
+  const debouncedSearch = useCallback((q: string) => {
+    setQuery(q);
+    const timer = setTimeout(() => handleSearch(q), 300);
+    return () => clearTimeout(timer);
+  }, [handleSearch]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #1a4a6e 0%, #123152 60%, #0d2340 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: 480 }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 style={{ color: '#fff', fontSize: 26, margin: 0 }}>Demande de Course</h1>
-          <p style={{ color: '#9fc3e8', fontSize: 14, marginTop: 6 }}>Transport médical · Loir-et-Cher (41)</p>
-        </div>
-
-        <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 18, padding: 24, boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
-          <AdresseAutocomplete label="Adresse de départ" placeholder="Chercher une adresse..." onSelect={(a) => selectAdresse('depart', a)} />
-          {depart.text && <p style={{ color: '#7ee0a3', fontSize: 13, margin: '0 0 14px' }}>✓ {depart.text}</p>}
-
-          <AdresseAutocomplete label="Destination" placeholder="Chercher une adresse..." onSelect={(a) => selectAdresse('destination', a)} />
-          {dest.text && <p style={{ color: '#7ee0a3', fontSize: 13, margin: '0 0 14px' }}>✓ {dest.text}</p>}
-
-          {distance !== null && price !== null && (
-            <div style={{ background: 'rgba(126,224,163,0.12)', border: '1px solid rgba(126,224,163,0.4)', borderRadius: 12, padding: 16, marginTop: 8 }}>
-              <p style={{ color: '#cfe3f5', fontSize: 14, margin: 0 }}>Distance : <strong>{distance.toFixed(1)} km</strong></p>
-              <p style={{ color: '#7ee0a3', fontSize: 20, fontWeight: 700, margin: '6px 0 0' }}>Prix estimé : {price.toFixed(2)} €</p>
-            </div>
-          )}
-        </div>
-
-        <p style={{ textAlign: 'center', color: '#6f93b8', fontSize: 12, marginTop: 20 }}>
-          <a href="/" style={{ color: '#9fc3e8' }}>← Retour à l'accueil</a>
-        </p>
-      </div>
+    <div style={{ position: 'relative', width: '100%', marginBottom: 16 }}>
+      <label style={{ display: 'block', color: '#cfe3f5', fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{label}</label>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => debouncedSearch(e.target.value)}
+        placeholder={placeholder}
+        style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box' }}
+      />
+      {loading && <p style={{ color: '#9fc3e8', fontSize: 13, margin: '6px 0 0' }}>Recherche...</p>}
+      {results.length > 0 && (
+        <ul style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1d3a5f', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 12, marginTop: 6, padding: 4, listStyle: 'none', zIndex: 20, maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+          {results.map((addr) => (
+            <li key={addr.id}>
+              <button
+                type="button"
+                onClick={() => { onSelect(addr); setQuery(''); setResults([]); }}
+                style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#fff', fontSize: 14, cursor: 'pointer', borderRadius: 8 }}
+              >
+                {addr.numero} {addr.rue} — {addr.code_postal} {addr.commune}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  )
+  );
 }
