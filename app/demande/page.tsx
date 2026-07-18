@@ -2,13 +2,20 @@
 import { useState } from 'react'
 import AdresseAutocomplete from '@/components/AdresseAutocomplete'
 
+interface Address {
+  latitude: number
+  longitude: number
+  numero: number
+  rue: string
+}
+
 export default function Page() {
   const [depart, setDepart] = useState({ lat: 0, lng: 0, text: '' })
   const [dest, setDest] = useState({ lat: 0, lng: 0, text: '' })
-  const [distance, setDistance] = useState(null)
-  const [price, setPrice] = useState(null)
+  const [distance, setDistance] = useState<number | null>(null)
+  const [price, setPrice] = useState<number | null>(null)
 
-  const selectAdresse = (type, a) => {
+  const selectAdresse = (type: string, a: Address) => {
     if (type === 'depart') {
       setDepart({ lat: a.latitude, lng: a.longitude, text: a.numero + ' ' + a.rue })
     } else {
@@ -17,7 +24,7 @@ export default function Page() {
     }
   }
 
-  const calcDistance = async (dp, ds) => {
+  const calcDistance = async (dp: any, ds: any) => {
     if (!dp.lat || !ds.lat) return
     try {
       const res = await fetch('/api/distance', {
@@ -40,7 +47,7 @@ export default function Page() {
       <p className="text-sm mt-1">{depart.text}</p>
       <AdresseAutocomplete label="Destination" placeholder="Chercher..." onSelect={(a) => selectAdresse('destination', a)} />
       <p className="text-sm mt-1">{dest.text}</p>
-      {distance && <div className="bg-blue-50 p-4 rounded-lg mt-4"><p>Distance: {distance.toFixed(1)} km</p><p className="font-bold">Prix: {price.toFixed(2)} EUR</p></div>}
+      {distance && <div className="bg-blue-50 p-4 rounded-lg mt-4"><p>Distance: {distance.toFixed(1)} km</p><p className="font-bold">Prix: {price?.toFixed(2)} EUR</p></div>}
     </div>
   )
 }
