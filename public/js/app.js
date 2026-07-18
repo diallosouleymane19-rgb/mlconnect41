@@ -7,7 +7,10 @@
 const APP_VERSION = 'v10';
 const API         = '/.netlify/functions';
 const OS_APP_ID   = '58ea61f3-139f-4f2a-9083-402d7c8b34cc';
-const STRIPE_PK   = 'pk_live_51TdciAEN9yUrhHVf3yafeqhI4O6q4UCkUr5OfAK5Y6rTnh7IoluR7ZaRjQqYQsE88oevPs6MQegQYjAy83CiyS3p00fxfNmT5H';
+// FIX-1 : clé publique surchargeable (window.MLC41_STRIPE_PK dans index.html) pour basculer
+// en mode TEST sans toucher au code. Par défaut : clé LIVE de production.
+const STRIPE_PK   = (typeof window !== 'undefined' && window.MLC41_STRIPE_PK) ||
+  'pk_live_51TdciAEN9yUrhHVf3yafeqhI4O6q4UCkUr5OfAK5Y6rTnh7IoluR7ZaRjQqYQsE88oevPs6MQegQYjAy83CiyS3p00fxfNmT5H';
 
 // Session en mémoire (sessionStorage pour persistance onglet)
 let SESSION = null;
@@ -296,7 +299,7 @@ function renderGainsDuJour(courses) {
   var banner = document.createElement('div');
   banner.id = 'gainsBanner';
   banner.className = 'gains-banner';
-  banner.innerHTML = '<span>💰 Gains aujourd\'hui</span><span class="gains-amount">' + (total/100).toFixed(2) + ' €</span>';
+  banner.innerHTML = '<span>💰 Gains aujourd\'hui</span><span class="gains-amount">' + total.toFixed(2) + ' €</span>'; // FIX-6 : montant_final déjà en euros
   var section = document.querySelector('.courses-section');
   if (section) section.parentNode.insertBefore(banner, section);
 }
@@ -486,12 +489,21 @@ function closePayModal() {
   if (modal) modal.hidden = true;
 }
 
+
+// FIX-3 : mappe le type transporteur (feuille T1) vers les types attendus par create-payment
+function mapTypeTransporteur(t) {
+  t = (t || '').toLowerCase();
+  if (t.indexOf('ambu') !== -1 || t.indexOf('vsl') !== -1 || t.indexOf('medic') !== -1) return 'medical';
+  if (t.indexOf('vtc') !== -1) return 'vtc';
+  return 'taxi';
+}
+
 async function submitPayment() {
   if (!_payCoursId || !SESSION?.token) return;
 
   var inputEl = document.getElementById('payMontantFinal');
   var montant = parseFloat(inputEl?.value);
-  if (!montant || montant <= 0) { showToast('Montant invalide', 'error'); return; }
+  if (!montant || montant < 0.5) { showToast('Montant invalide (minimum 0,50 \u20ac)', 'error'); return; } // FIX-2 : min Stripe 0,50 \u20ac
   _payMontant = montant;
 
   var btn   = document.getElementById('paySubmitBtn');
@@ -504,7 +516,9 @@ async function submitPayment() {
     var res1 = await fetch(API + '/create-payment', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SESSION.token },
-      body:    JSON.stringify({ token: SESSION.token, courseId: _payCoursId, montant_estime: montant })
+      // FIX-3 : transmettre le type de transporteur (sinon commission toujours 10% taxi)
+      body:    JSON.stringify({ token: SESSION.token, courseId: _payCoursId, montant_estime: montant,
+                                type_transporteur: mapTypeTransporteur(SESSION.type) })
     });
     var data1 = await res1.json();
     if (!res1.ok) throw new Error(data1.error || 'Erreur création paiement');
@@ -512,13 +526,24 @@ async function submitPayment() {
     var clientSecret = data1.client_secret;
     _payPiId         = data1.payment_intent_id;
 
-    if (btn) btn.textContent = 'Confirmation carte…';
+    // FIX-4 : garde-fou LIVE/TEST — la clé publique et la clé serveur doivent être dans le même mode
+    var pkLive = STRIPE_PK.indexOf('pk_live_') === 0;
+    if (data1.mode && ((data1.mode === 'LIVE') !== pkLive)) {
+      throw new Error('Configuration Stripe incohérente (clé publique ' + (pkLive ? 'LIVE' : 'TEST') +
+        ' / serveur ' + data1.mode + ') — paiement annulé');
+    }
+    if (data1.mode === 'TEST') showToast('⚠️ MODE TEST Stripe — aucun débit réel', 'warning');
 
-    // ── Étape 2 : confirmer la carte via Stripe.js ──
-    var result = await _stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: _stripeCard }
-    });
-    if (result.error) throw new Error(result.error.message);
+    // FIX-5 : si le PI réutilisé est déjà autorisé (requires_capture), ne pas re-confirmer la carte
+    if (data1.statut_pi !== 'requires_capture') {
+      if (btn) btn.textContent = 'Confirmation carte…';
+
+      // ── Étape 2 : confirmer la carte via Stripe.js ──
+      var result = await _stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card: _stripeCard }
+      });
+      if (result.error) throw new Error(result.error.message);
+    }
 
     if (btn) btn.textContent = 'Capture en cours…';
 

@@ -3,6 +3,9 @@
 // GET  ?mois=YYYY-MM  → lit T4-Commissions et renvoie les lignes (affichage admin)
 // POST { mois? }      → agrège T3-Courses → écrit T4-Commissions (idempotent)
 // Netlify Scheduled Function : exécution auto le 1er du mois à 02:00 UTC
+// VERSION CORRIGÉE (audit 2026-07-18)
+// FIX-K : avant, un POST avec body vide contournait l'auth admin (isScheduled = !event.body).
+//         Désormais l'invocation planifiée est détectée via body.next_run (fourni par Netlify).
 
 var utils = require('./utils');
 
@@ -53,8 +56,8 @@ exports.handler = async function(event) {
   var body = {};
   try { body = JSON.parse(event.body || '{}'); } catch {}
 
-  // v51 sécurité : appel manuel réservé admin (l'exécution planifiée Netlify n'a pas de body.token → autorisée)
-  var isScheduled = !event.body || event.body === '{}';
+  // FIX-K : Netlify invoque les scheduled functions avec un body {"next_run": "..."}
+  var isScheduled = !!body.next_run;
   if (!isScheduled) {
     var sPost;
     try { sPost = utils.verifySession(body.token || ''); }

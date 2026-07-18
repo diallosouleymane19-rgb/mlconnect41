@@ -1,4 +1,7 @@
 'use strict';
+// VERSION CORRIGÉE (audit 2026-07-18)
+// FIX-L : renvoie capture_date (col R) et montant_final (col S) — sans eux, la bannière
+//         "Gains aujourd'hui" du dashboard transporteur affichait toujours 0 €.
 var utils = require('./utils');
 
 exports.handler = async function(event) {
@@ -14,7 +17,7 @@ exports.handler = async function(event) {
   catch (e) { return utils.err(401, e.message); }
 
   try {
-    var rows = await utils.sheetsGet('T3-Courses!A:T');
+    var rows = await utils.sheetsGet('T3-Courses!A:V'); // FIX-L : étendu jusqu'à V
     if (!rows || rows.length < 2) return utils.ok({ courses: [] });
 
     var dataRows = rows.slice(1);
@@ -32,8 +35,10 @@ exports.handler = async function(event) {
           depart:      r[5] || '',
           arrivee:     r[6] || '',
           statut:      r[7] || 'en_attente',
-          prix:        parseFloat(r[19] || '') || 0,
-          notes:       r[10] || ''
+          prix:         parseFloat(r[19] || '') || 0,
+          notes:        r[10] || '',
+          capture_date: r[17] || '',                       // FIX-L
+          montant_final: parseFloat(r[18] || '') || 0      // FIX-L (en euros)
         };
       });
 

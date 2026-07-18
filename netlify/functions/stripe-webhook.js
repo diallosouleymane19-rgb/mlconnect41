@@ -1,6 +1,8 @@
 'use strict';
 // stripe-webhook.js — Webhooks Stripe idempotents
-// SMD GLOBAL CONSULTING LLC — MobiLoireConnect41 v42
+// SMD GLOBAL CONSULTING LLC — MobiLoireConnect41 v42 — VERSION CORRIGÉE (audit 2026-07-18)
+// FIX-J : une erreur dans un handler (ex : Google Sheets indisponible) renvoie désormais 500
+//         → Stripe réessaie l'événement (avant : 200 → événement perdu définitivement)
 // Destination 1 (Votre compte)     : payment_intent.succeeded, transfer.created, account.updated
 // Destination 2 (Comptes connectés): payout.paid
 // Chaque destination a sa propre clé : STRIPE_WEBHOOK_SECRET / STRIPE_WEBHOOK_SECRET_CONNECT
@@ -138,8 +140,9 @@ exports.handler = async function(event) {
       default: result = { handled: false, reason: 'événement non géré : ' + eventType };
     }
   } catch(e) {
+    // FIX-J : 500 → Stripe réessaiera (les handlers sont idempotents, pas de double effet)
     console.error('[webhook] Erreur handler :', e.message);
-    return { statusCode: 200, body: JSON.stringify({ received: true, error: e.message }) };
+    return { statusCode: 500, body: JSON.stringify({ received: false, error: e.message }) };
   }
 
   return {

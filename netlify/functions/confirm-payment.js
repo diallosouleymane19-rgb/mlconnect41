@@ -1,7 +1,11 @@
 'use strict';
 // confirm-payment.js — Capture le paiement + mise à jour Sheets
 // Modèle B : pas de Stripe Connect — tout va sur le compte SMD
-// MobiLoireConnect41 v45
+// MobiLoireConnect41 v45 — VERSION CORRIGÉE (audit 2026-07-18)
+// FIX-F : montant_final obligatoire (min 0,50 €) — avant : absent = capture du montant total silencieuse
+// FIX-G : idempotence — si le PI est déjà "succeeded" (double clic / retry), renvoyer succès au lieu d'une erreur
+// FIX-H : échec de mise à jour Sheets signalé au client (sheets_ok:false) au lieu d'être silencieux
+// FIX-I : écrit aussi la col N (transporteur_id) utilisée par payout-report pour l'agrégation mensuelle
 
 var utils = require('./utils');
 
@@ -40,6 +44,7 @@ exports.handler = async function(event) {
 
   if (!courseId) return utils.err(400, 'courseId requis');
   if (!pi_id)    return utils.err(400, 'payment_intent_id requis');
+  if (!montant_final || montant_final < 0.5) return utils.err(400, 'montant_final requis (minimum 0,50 €)'); // FIX-F
 
   var sk = process.env.STRIPE_SECRET_KEY;
   if (!sk) return utils.err(500, 'STRIPE_SECRET_KEY non configuré');
@@ -49,9 +54,6 @@ exports.handler = async function(event) {
   try { pi = await stripeRequest('GET', '/payment_intents/' + pi_id, null, sk); }
   catch(e) { return utils.err(500, 'Erreur Stripe GET : ' + e.message); }
   if (pi.error) return utils.err(400, 'Stripe : ' + pi.error.message);
-  if (pi.status !== 'requires_capture') {
-    return utils.err(400, 'Payment Intent non capturable — statut : ' + pi.status);
-  }
 
   // v51 sécurité : le PI doit appartenir au transporteur connecté (anti-IDOR)
   var piMeta = pi.metadata || {};
@@ -61,6 +63,19 @@ exports.handler = async function(event) {
   // v51 sécurité : le PI doit correspondre à la course annoncée
   if ((piMeta.course_id || '') !== courseId) {
     return utils.err(400, 'Incohérence course / paiement');
+  }
+
+  // FIX-G : déjà capturé (double clic, retry après timeout) → succès idempotent, pas d'erreur
+  if (pi.status === 'succeeded') {
+    var montantDeja = (pi.amount_received || pi.amount) / 100;
+    return utils.ok({
+      courseId: courseId, payment_intent_id: pi_id, statut: 'payee',
+      deja_capture: true, montant_final: montantDeja,
+      mode: sk.startsWith('sk_live') ? 'LIVE' : 'TEST'
+    });
+  }
+  if (pi.status !== 'requires_capture') {
+    return utils.err(400, 'Payment Intent non capturable — statut : ' + pi.status);
   }
 
   // 2. Capture (avec ajustement montant si différent de l'estimé)
@@ -96,6 +111,7 @@ exports.handler = async function(event) {
 
   // 4. Mise à jour Google Sheets T3-Courses
   // H=Statut P=pi_id Q=payment_status R=capture_date S=montant_final U=commission_smd V=reversement_transporteur
+  var sheets_ok = true; // FIX-H
   try {
     var rows = await utils.sheetsGet('T3-Courses!A:A');
     var rowIndex = -1;
@@ -104,14 +120,18 @@ exports.handler = async function(event) {
     }
     if (rowIndex > 0) {
       await utils.sheetsUpdateCell('T3-Courses!H' + rowIndex, 'terminee');
+      await utils.sheetsUpdateCell('T3-Courses!N' + rowIndex, session.id || ''); // FIX-I : payout-report lit col N
       await utils.sheetsUpdateCell('T3-Courses!P' + rowIndex, pi_id);
       await utils.sheetsUpdateCell('T3-Courses!Q' + rowIndex, 'captured');
       await utils.sheetsUpdateCell('T3-Courses!R' + rowIndex, capture_date);
       await utils.sheetsUpdateCell('T3-Courses!S' + rowIndex, montant_reel.toFixed(2));
       await utils.sheetsUpdateCell('T3-Courses!U' + rowIndex, commission_finale.toFixed(2));
       await utils.sheetsUpdateCell('T3-Courses!V' + rowIndex, reversement_final.toFixed(2));
+    } else {
+      sheets_ok = false;
     }
   } catch(e) {
+    sheets_ok = false;
     console.error('Sheets confirm error:', e.message);
   }
 
@@ -139,6 +159,7 @@ exports.handler = async function(event) {
     courseId:                 courseId,
     payment_intent_id:        pi_id,
     statut:                   'payee',
+    sheets_ok:                sheets_ok, // FIX-H : false = paiement encaissé mais Sheets non mis à jour (vérifier manuellement)
     montant_final:            montant_reel,
     commission_smd:           commission_finale,
     reversement_transporteur: reversement_final,
