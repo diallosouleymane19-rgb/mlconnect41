@@ -10,7 +10,7 @@ const OS_APP_ID   = '58ea61f3-139f-4f2a-9083-402d7c8b34cc';
 // FIX-1 : clé publique surchargeable (window.MLC41_STRIPE_PK dans index.html) pour basculer
 // en mode TEST sans toucher au code. Par défaut : clé LIVE de production.
 const STRIPE_PK   = (typeof window !== 'undefined' && window.MLC41_STRIPE_PK) ||
-  'pk_live_51TdciAEN9yUrhHVf3yafeqhI4O6q4UCkUr5OfAK5Y6rTnh7IoluR7ZaRjQqYQsE88oevPs6MQegQYjAy83CiyS3p00fxfNmT5H';
+  'pk_test_51TdciAEN9yUrhHVflSkmN14ZqQOo1PBULaoKhuNmC3mNjBheiTKn1gDI0NBiuXVZDqn68AjyLX2UC1MjHQJcuuqj00grO328gt';
 
 // Session en mémoire (sessionStorage pour persistance onglet)
 let SESSION = null;
