@@ -1,209 +1,218 @@
 'use client'
-
 import { useState } from 'react'
-import { createDemande } from './actions'
+import AdresseAutocomplete from '@/components/AdresseAutocomplete'
+
+interface Address {
+  id: number
+  numero: number
+  rue: string
+  commune: string
+  code_postal: string
+  latitude: number
+  longitude: number
+}
 
 export default function DemandePage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
     telephone: '',
     adresse_depart: '',
+    adresse_depart_lat: 0,
+    adresse_depart_lng: 0,
     destination: '',
+    destination_lat: 0,
+    destination_lng: 0,
     date_course: '',
     heure_course: '',
     motif: 'medical',
     type_service: 'taxi',
-    distance_km: '',
-    prescription: false
   })
+  const [distance, setDistance] = useState<number | null>(null)
+  const [price, setPrice] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+  const selectAdresse = (type: 'depart' | 'destination', address: Address) => {
+    if (type === 'depart') {
+      setFormData({
+        ...formData,
+        adresse_depart: `${address.numero} ${address.rue}`,
+        adresse_depart_lat: address.latitude,
+        adresse_depart_lng: address.longitude,
+      })
+    } else {
+      setFormData({
+        ...formData,
+        destination: `${address.numero} ${address.rue}`,
+        destination_lat: address.latitude,
+        destination_lng: address.longitude,
+      })
+    }
+  }
+
+  const calculerDistance = async () => {
+    if (!formData.adresse_depart_lat || !formData.destination_lat) return
+    
+    try {
+      const res = await fetch('/api/distance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lat1: formData.adresse_depart_lat,
+          lng1: formData.adresse_depart_lng,
+          lat2: formData.destination_lat,
+          lng2: formData.destination_lng,
+        })
+      })
+      const data = await res.json()
+      setDistance(data.distance)
+      setPrice(data.price)
+    } catch (e) {
+      console.error(e)
+      setError('Erreur calcul distance')
+    }
   }
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
     try {
-      const result = await createDemande(formData)
-      if (result.ok) {
-        setSuccess(true)
-        setFormData({
-          nom: '',
-          prenom: '',
-          telephone: '',
-          adresse_depart: '',
-          destination: '',
-          date_course: '',
-          heure_course: '',
-          motif: 'medical',
-          type_service: 'taxi',
-          distance_km: '',
-          prescription: false
-        })
-        setTimeout(() => setSuccess(false), 5000)
-      } else {
-        setError(result.error || 'Erreur lors de la cr√©ation')
+      const payload = {
+        ...formData,
+        distance: distance || null,
+        price: price || null,
       }
-    } catch (err: any) {
-      setError(err.message)
+      const res = await fetch('/api/demande', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        alert('Demande crÈÈe!')
+        setFormData({
+          nom: '', prenom: '', telephone: '',
+          adresse_depart: '', adresse_depart_lat: 0, adresse_depart_lng: 0,
+          destination: '', destination_lat: 0, destination_lng: 0,
+          date_course: '', heure_course: '',
+          motif: 'medical', type_service: 'taxi',
+        })
+        setDistance(null)
+        setPrice(null)
+      } else {
+        setError('Erreur crÈation demande')
+      }
+    } catch (e) {
+      setError('Erreur: ' + e)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold mb-2 text-gray-900">Demande de Course</h1>
-        <p className="text-gray-600 mb-6">Transport m√©dical en Loir-et-Cher</p>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Demande de Course</h1>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Nom"
+            value={formData.nom}
+            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+            className="px-3 py-2 border rounded-lg"
+            required
+          />
+          <input
+            type="text"
+            placeholder="PrÈnom"
+            value={formData.prenom}
+            onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+            className="px-3 py-2 border rounded-lg"
+            required
+          />
+        </div>
 
-        {success && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-            Demande cr√©√©e avec succ√®s!
+        <input
+          type="tel"
+          placeholder="TÈlÈphone"
+          value={formData.telephone}
+          onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+          className="w-full px-3 py-2 border rounded-lg"
+          required
+        />
+
+        <AdresseAutocomplete
+          label="Adresse de dÈpart"
+          placeholder="Chercher adresse..."
+          onSelect={(addr) => selectAdresse('depart', addr)}
+        />
+        <p className="text-sm text-gray-600">{formData.adresse_depart}</p>
+
+        <AdresseAutocomplete
+          label="Destination"
+          placeholder="Chercher adresse..."
+          onSelect={(addr) => {
+            selectAdresse('destination', addr)
+            setTimeout(() => calculerDistance(), 100)
+          }}
+        />
+        <p className="text-sm text-gray-600">{formData.destination}</p>
+
+        {distance && price && (
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="text-sm">Distance: <strong>{distance.toFixed(1)} km</strong></p>
+            <p className="text-lg font-bold">Prix estimÈ: <strong>{price.toFixed(2)}Ä</strong></p>
           </div>
         )}
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="nom"
-              placeholder="Nom"
-              value={formData.nom}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-            <input
-              type="text"
-              name="prenom"
-              placeholder="Pr√©nom"
-              value={formData.prenom}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-          </div>
-
+        <div className="grid grid-cols-2 gap-4">
           <input
-            type="tel"
-            name="telephone"
-            placeholder="T√©l√©phone"
-            value={formData.telephone}
-            onChange={handleChange}
+            type="date"
+            value={formData.date_course}
+            onChange={(e) => setFormData({ ...formData, date_course: e.target.value })}
+            className="px-3 py-2 border rounded-lg"
             required
-            className="w-full border border-gray-300 rounded px-3 py-2"
           />
-
           <input
-            type="text"
-            name="adresse_depart"
-            placeholder="Adresse de d√©part"
-            value={formData.adresse_depart}
-            onChange={handleChange}
+            type="time"
+            value={formData.heure_course}
+            onChange={(e) => setFormData({ ...formData, heure_course: e.target.value })}
+            className="px-3 py-2 border rounded-lg"
             required
-            className="w-full border border-gray-300 rounded px-3 py-2"
           />
+        </div>
 
-          <input
-            type="text"
-            name="destination"
-            placeholder="Destination"
-            value={formData.destination}
-            onChange={handleChange}
-            required
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
+        <select
+          value={formData.motif}
+          onChange={(e) => setFormData({ ...formData, motif: e.target.value })}
+          className="w-full px-3 py-2 border rounded-lg"
+        >
+          <option value="medical">MÈdical</option>
+          <option value="loisir">Loisir</option>
+          <option value="travail">Travail</option>
+        </select>
 
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="date"
-              name="date_course"
-              value={formData.date_course}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-            <input
-              type="time"
-              name="heure_course"
-              value={formData.heure_course}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-          </div>
+        <select
+          value={formData.type_service}
+          onChange={(e) => setFormData({ ...formData, type_service: e.target.value })}
+          className="w-full px-3 py-2 border rounded-lg"
+        >
+          <option value="taxi">Taxi</option>
+          <option value="ambulance">Ambulance</option>
+        </select>
 
-          <select
-            name="motif"
-            value={formData.motif}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          >
-            <option value="medical">Consultation m√©dicale</option>
-            <option value="hospitalisation">Hospitalisation</option>
-            <option value="urgence">Urgence</option>
-            <option value="autre">Autre</option>
-          </select>
+        {error && <p className="text-red-600">{error}</p>}
 
-          <select
-            name="type_service"
-            value={formData.type_service}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          >
-            <option value="taxi">Taxi</option>
-            <option value="vtc">VTC</option>
-            <option value="medical">Transport M√©dical</option>
-          </select>
-
-          <input
-            type="number"
-            name="distance_km"
-            placeholder="Distance (km)"
-            value={formData.distance_km}
-            onChange={handleChange}
-            step="0.1"
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="prescription"
-              checked={formData.prescription}
-              onChange={handleChange}
-              className="w-4 h-4"
-            />
-            <span className="text-gray-700">Avec prescription m√©dicale</span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-bold py-3 rounded hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Envoi...' : 'Soumettre la demande'}
-          </button>
-        </form>
-      </div>
-    </main>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? 'CrÈation...' : 'CrÈer Demande'}
+        </button>
+      </form>
+    </div>
   )
 }
