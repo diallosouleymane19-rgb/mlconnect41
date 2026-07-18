@@ -111,12 +111,12 @@
             var li = document.createElement('li');
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.textContent = a.numero + ' ' + a.rue + ' — ' + a.code_postal + ' ' + a.commune;
+            btn.textContent = (a.numero ? a.numero + ' ' : '') + a.rue + ' — ' + a.code_postal + ' ' + a.commune;
             btn.style.cssText = 'width:100%;text-align:left;padding:10px 12px;background:transparent;border:none;color:#fff;font-size:14px;cursor:pointer;border-radius:8px;';
             btn.onmouseover = function () { btn.style.background = 'rgba(255,255,255,.1)'; };
             btn.onmouseout = function () { btn.style.background = 'transparent'; };
             btn.onclick = function () {
-              input.value = a.numero + ' ' + a.rue + ', ' + a.code_postal + ' ' + a.commune;
+              input.value = (a.numero ? a.numero + ' ' : '') + a.rue + ', ' + a.code_postal + ' ' + a.commune;
               coords[type] = { lat: a.latitude, lng: a.longitude };
               list.style.display = 'none';
               maybeDistance();
