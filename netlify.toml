@@ -5,6 +5,10 @@
   NODE_VERSION        = "20"
   SECRETS_SCAN_ENABLED = "false"
 
+# Plugin Next.js pour Netlify - gère le déploiement correct de Next.js
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 # v52 : installe les dependances coeur des fonctions (@netlify/blobs pour le rate limiting distribue)
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
