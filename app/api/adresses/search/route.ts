@@ -13,7 +13,7 @@ async function searchBAN(query: string) {
   const url =
     'https://api-adresse.data.gouv.fr/search/?q=' +
     encodeURIComponent(query) +
-    '&limit=15&lat=47.6&lon=1.33&type=housenumber';
+    '&limit=15&lat=47.6&lon=1.33';
   const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
   if (!res.ok) throw new Error('BAN error ' + res.status);
   const data = await res.json();
