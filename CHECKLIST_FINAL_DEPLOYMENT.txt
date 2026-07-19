@@ -1,0 +1,107 @@
+✅ CHECKLIST FINAL — Onboarding Transporteur RGPD
+
+Status: Claude a fait 1, 2, 3 | Toi: 4, 5
+
+═══════════════════════════════════════════════════
+
+CLAUDE FAIT:
+
+✅ 1. Fichiers copiés dans le repo:
+   ✓ /public/politique-confidentialite.html
+   ✓ /public/transporteur/inscription.html (renamed from v2)
+   ✓ /app/api/fn/transporteur-onboarding/route.ts (renamed from v2)
+
+✅ 2. Supabase SQL créé:
+   ✓ supabase_migration_transporteurs_pending.sql (prêt à copier/coller)
+   ✓ Table: transporteurs_pending avec colonnes RGPD + indexes
+
+✅ 3. Env vars template créé:
+   ✓ ENV_VARS_VERCEL_TEMPLATE.txt (remplir + copier dans Vercel)
+
+═══════════════════════════════════════════════════
+
+TOI À FAIRE (30 min):
+
+4. SUPABASE SQL
+   □ Aller: https://app.supabase.com/project/nfnjpdxtmobbudluphjr/sql
+   □ Ouvrir: supabase_migration_transporteurs_pending.sql (dans le repo)
+   □ Copier TOUT le SQL (sauf commentaires)
+   □ Coller dans SQL Editor
+   □ Cliquer RUN
+   □ ✓ Vérifier: Table créée dans Supabase → Tables → transporteurs_pending
+
+   □ Créer bucket Storage:
+      → Supabase Storage → New Bucket
+      → Nom: "licences"
+      → Public: ✓ coché
+      → Create
+
+5. VERCEL ENV VARS
+   □ Ouvrir: ENV_VARS_VERCEL_TEMPLATE.txt
+   □ Remplir les valeurs (EMAIL_USER, etc.)
+   □ Aller: https://vercel.com/diallosouleymane19-rgb/mlconnect41
+   □ Settings → Environment Variables
+   □ Ajouter: EMAIL_SERVICE=gmail
+   □ Ajouter: EMAIL_USER=votre-email
+   □ Ajouter: EMAIL_PASSWORD=xxxxx
+   □ Ajouter: EMAIL_FROM=noreply@smdconsulting.pro
+   □ Optionnel (SMS): TWILIO_* ou MAKE_WEBHOOK_SMS
+   □ ✓ Save all
+
+   □ Redeploy:
+      Vercel → Deployments → "Redeploy" sur le dernier
+      → Attendre ✓ build vert (3-5 min)
+
+6. GOOGLE SHEET (colonnes)
+   □ Ouvrir ta Google Sheet Transporteurs
+   □ Ajouter colonnes K, L, M, N:
+      K: Date expiration licence
+      L: Consent RGPD
+      M: Consent Notifications
+      N: Consent Marketing
+   □ (ou laisser vides, il y aura des données futures)
+
+7. GIT PUSH + DEPLOY
+   □ Terminal: cd C:\mlconnect41
+   □ git add .
+   □ git commit -m "feat: onboarding transporteur RGPD + email + SMS"
+   □ git push
+   □ ✓ Vérifier: GitHub montre "main" à jour
+   □ ✓ Vérifier: Vercel auto-redeploy (3 min)
+
+═══════════════════════════════════════════════════
+
+TESTS RAPIDES (après déploiement):
+
+1. Accès formulaire:
+   https://mlconnect41.vercel.app/public/transporteur/inscription.html
+   → Doit afficher le formulaire ✓
+
+2. Politique accessible:
+   https://mlconnect41.vercel.app/politique-confidentialite.html
+   → Doit afficher la page RGPD ✓
+
+3. Test inscription:
+   Remplir formulaire avec test data
+   → Si EMAIL_* configuré: PIN arrive par email ✓
+   → Si SMS* configuré: PIN arrive par SMS ✓
+   → Google Sheet: nouvelle ligne T001 ✓
+   → Supabase: doc créé dans transporteurs_pending ✓
+   → Slack: alert reçue ✓
+
+═══════════════════════════════════════════════════
+
+DURÉE ESTIMÉE:
+- Supabase SQL: 3 min
+- Vercel env vars: 10 min
+- Google Sheet: 2 min
+- Git push: 2 min
+- Deploy + test: 5 min
+─────
+TOTAL: ~22 min
+
+═══════════════════════════════════════════════════
+
+QUESTIONS?
+→ contact@smdconsulting.pro
+→ Ou crie "ERROR: ..." et on corrige

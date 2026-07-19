@@ -1,0 +1,62 @@
+INSTRUCTIONS: Ajouter ces variables dans Vercel Dashboard
+
+Dashboard: https://vercel.com/diallosouleymane19-rgb/mlconnect41
+→ Settings → Environment Variables
+
+Copier/coller chaque ligne et remplacer les valeurs:
+
+=== EMAIL CONFIGURATION (obligatoire) ===
+EMAIL_SERVICE=gmail
+EMAIL_USER=votre-email@gmail.fr
+EMAIL_PASSWORD=xxxxx (app password depuis https://myaccount.google.com/apppasswords)
+EMAIL_FROM=noreply@smdconsulting.pro
+
+=== SMS CONFIGURATION (optionnel - Twilio OU Make.com) ===
+
+OPTION A: Twilio
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_PHONE_NUMBER=+336xxxxxxxx
+
+OU OPTION B: Make.com webhook
+MAKE_WEBHOOK_SMS=https://hook.make.com/...
+
+=== SLACK (déjà configuré, vérifier) ===
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+(ou MAKE_WEBHOOK_SCENARIO_B si existant)
+
+=== GOOGLE (déjà dans Vercel) ===
+GOOGLE_SHEET_ID=
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
+
+=== STRIPE (déjà en TEST) ===
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+=== SUPABASE (déjà dans .env.local) ===
+NEXT_PUBLIC_SUPABASE_URL=https://nfnjpdxtmobbudluphjr.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
+=== APP CONFIG ===
+APP_URL=https://mlconnect41.vercel.app
+NEXT_PUBLIC_APP_URL=https://mlconnect41.vercel.app
+
+---
+
+PROCÉDURE VERCEL:
+1. Aller dans Vercel Dashboard
+2. Projet mlconnect41 → Settings → Environment Variables
+3. Cliquer "Add Environment Variable"
+4. Nom: EMAIL_SERVICE
+5. Valeur: gmail
+6. Cocher: Production, Preview, Development
+7. Save
+8. Répéter pour tous les vars ci-dessus
+
+OU via CLI (si vous avez Vercel CLI):
+vercel env add EMAIL_SERVICE
+vercel env add EMAIL_USER
+... etc
+
+Après: Deploy → tout redéployé automatiquement
