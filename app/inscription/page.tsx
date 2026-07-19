@@ -1,6 +1,115 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect } from 'react';
 
 export default function InscriptionTransporteur() {
+  useEffect(() => {
+    const form = document.getElementById('inscriptionForm') as HTMLFormElement;
+    const fileInput = document.getElementById('licence') as HTMLInputElement;
+    const fileNameDiv = document.getElementById('fileName') as HTMLDivElement;
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
+    const loading = document.getElementById('loading') as HTMLDivElement;
+    const alerts = document.getElementById('alerts') as HTMLDivElement;
+
+    const showAlert = (message: string, type: string) => {
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      alerts.innerHTML = '';
+      alerts.appendChild(alert);
+    };
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          showAlert('Erreur: fichier trop gros (max 5 MB)', 'error');
+          fileInput.value = '';
+          fileNameDiv.textContent = '';
+          return;
+        }
+        const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+          showAlert('Erreur: format invalide (PDF, JPG ou PNG uniquement)', 'error');
+          fileInput.value = '';
+          fileNameDiv.textContent = '';
+          return;
+        }
+        fileNameDiv.textContent = `✓ ${file.name}`;
+      }
+    });
+
+    document.getElementById('siren')?.addEventListener('blur', (e) => {
+      const siren = (e.target as HTMLInputElement).value.replace(/\D/g, '');
+      if (siren && (siren.length !== 10 && siren.length !== 14)) {
+        showAlert('SIREN/SIRET invalide (10 ou 14 chiffres)', 'error');
+      }
+    });
+
+    document.getElementById('dateExpiration')?.addEventListener('change', (e) => {
+      const selected = new Date((e.target as HTMLInputElement).value);
+      const today = new Date();
+      if (selected < today) {
+        showAlert('Date d\'expiration passée: votre licence doit être valide', 'warning');
+      }
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const file = fileInput.files?.[0];
+      if (!file) {
+        showAlert('Veuillez uploader une licence', 'error');
+        return;
+      }
+
+      const consentRGPD = (document.getElementById('consentRGPD') as HTMLInputElement).checked;
+      if (!consentRGPD) {
+        showAlert('Vous devez accepter la politique de confidentialité pour continuer', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('nom', (document.getElementById('nom') as HTMLInputElement).value);
+      formData.append('telephone', (document.getElementById('telephone') as HTMLInputElement).value);
+      formData.append('email', (document.getElementById('email') as HTMLInputElement).value);
+      formData.append('siren', (document.getElementById('siren') as HTMLInputElement).value.replace(/\D/g, ''));
+      formData.append('type', (document.getElementById('type') as HTMLSelectElement).value);
+      formData.append('dateExpiration', (document.getElementById('dateExpiration') as HTMLInputElement).value);
+      formData.append('licence', file);
+      formData.append('consentRGPD', consentRGPD.toString());
+      formData.append('consentNotifications', ((document.getElementById('consentNotifications') as HTMLInputElement).checked).toString());
+      formData.append('consentMarketing', ((document.getElementById('consentMarketing') as HTMLInputElement).checked).toString());
+
+      submitBtn.disabled = true;
+      loading.style.display = 'block';
+      alerts.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/fn/transporteur-onboarding', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showAlert(`✓ Inscrit avec succès! ID: ${data.id} · Vérifiez vos emails/SMS pour votre PIN.`, 'success');
+          form.reset();
+          fileNameDiv.textContent = '';
+          setTimeout(() => window.location.href = '/transporteur', 3000);
+        } else {
+          showAlert(data.error || 'Erreur lors de l\'inscription', 'error');
+        }
+      } catch (err) {
+        showAlert(`Erreur réseau: ${(err as Error).message}`, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+  }, []);
+
   return (
     <>
       <style jsx>{`
@@ -25,6 +134,7 @@ export default function InscriptionTransporteur() {
           width: 100%;
           max-width: 550px;
           padding: 40px;
+          margin: 0 auto;
         }
         .logo {
           text-align: center;
@@ -301,112 +411,6 @@ export default function InscriptionTransporteur() {
           ✓ Vos données sont protégées conformément au RGPD.
         </p>
       </div>
-
-      <script dangerouslySetInnerHTML={{__html: `
-        const form = document.getElementById('inscriptionForm');
-        const fileInput = document.getElementById('licence');
-        const fileNameDiv = document.getElementById('fileName');
-        const submitBtn = document.getElementById('submitBtn');
-        const loading = document.getElementById('loading');
-        const alerts = document.getElementById('alerts');
-
-        fileInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-              showAlert('Erreur: fichier trop gros (max 5 MB)', 'error');
-              fileInput.value = '';
-              fileNameDiv.textContent = '';
-              return;
-            }
-            const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-            if (!validTypes.includes(file.type)) {
-              showAlert('Erreur: format invalide (PDF, JPG ou PNG uniquement)', 'error');
-              fileInput.value = '';
-              fileNameDiv.textContent = '';
-              return;
-            }
-            fileNameDiv.textContent = \`✓ \${file.name}\`;
-          }
-        });
-
-        document.getElementById('siren').addEventListener('blur', (e) => {
-          const siren = e.target.value.replace(/\\D/g, '');
-          if (siren && (siren.length !== 10 && siren.length !== 14)) {
-            showAlert('SIREN/SIRET invalide (10 ou 14 chiffres)', 'error');
-          }
-        });
-
-        document.getElementById('dateExpiration').addEventListener('change', (e) => {
-          const selected = new Date(e.target.value);
-          const today = new Date();
-          if (selected < today) {
-            showAlert('⚠️ Date d\\'expiration passée: votre licence doit être valide', 'warning');
-          }
-        });
-
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const file = fileInput.files[0];
-          if (!file) {
-            showAlert('Veuillez uploader une licence', 'error');
-            return;
-          }
-
-          if (!document.getElementById('consentRGPD').checked) {
-            showAlert('Vous devez accepter la politique de confidentialité pour continuer', 'error');
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append('nom', document.getElementById('nom').value);
-          formData.append('telephone', document.getElementById('telephone').value);
-          formData.append('email', document.getElementById('email').value);
-          formData.append('siren', document.getElementById('siren').value.replace(/\\D/g, ''));
-          formData.append('type', document.getElementById('type').value);
-          formData.append('dateExpiration', document.getElementById('dateExpiration').value);
-          formData.append('licence', file);
-          formData.append('consentRGPD', document.getElementById('consentRGPD').checked);
-          formData.append('consentNotifications', document.getElementById('consentNotifications').checked);
-          formData.append('consentMarketing', document.getElementById('consentMarketing').checked);
-
-          submitBtn.disabled = true;
-          loading.style.display = 'block';
-          alerts.innerHTML = '';
-
-          try {
-            const response = await fetch('/.netlify/functions/transporteur-onboarding', {
-              method: 'POST',
-              body: formData
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-              showAlert(\`✓ Inscrit avec succès! ID: \${data.id} · Vérifiez vos emails/SMS pour votre PIN.\`, 'success');
-              form.reset();
-              fileNameDiv.textContent = '';
-              setTimeout(() => window.location.href = '/transporteur', 3000);
-            } else {
-              showAlert(data.error || 'Erreur lors de l\\'inscription', 'error');
-            }
-          } catch (err) {
-            showAlert('Erreur réseau: ' + err.message, 'error');
-          } finally {
-            submitBtn.disabled = false;
-            loading.style.display = 'none';
-          }
-        });
-
-        function showAlert(message, type) {
-          const alert = document.createElement('div');
-          alert.className = \`alert alert-\${type}\`;
-          alert.textContent = message;
-          alerts.innerHTML = '';
-          alerts.appendChild(alert);
-        }
-      `}} />
     </>
   );
 }
