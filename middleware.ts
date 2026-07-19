@@ -25,7 +25,8 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAdmin = path.startsWith('/admin');
   const isTransporteur = path.startsWith('/transporteur');
-  const isProtected = isAdmin || isTransporteur;
+  const isInscription = path === '/transporteur/inscription'; // Allow public access to inscription
+  const isProtected = (isAdmin || isTransporteur) && !isInscription;
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
