@@ -3,7 +3,7 @@ import React from 'react';
 export default function InscriptionTransporteur() {
   return (
     <>
-      <style jsx>{`
+      <style>{`
         * {
           margin: 0;
           padding: 0;

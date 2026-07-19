@@ -1,6 +1,166 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, CSSProperties } from 'react';
+
+const styles = {
+  globalBody: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px',
+    margin: 0,
+  } as CSSProperties,
+  container: {
+    background: 'white',
+    borderRadius: '12px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    width: '100%',
+    maxWidth: '550px',
+    padding: '40px',
+    margin: '0 auto',
+  } as CSSProperties,
+  logo: {
+    textAlign: 'center' as const,
+    marginBottom: '30px',
+  } as CSSProperties,
+  logoH1: {
+    fontSize: '24px',
+    color: '#667eea',
+    marginBottom: '8px',
+    margin: 0,
+  } as CSSProperties,
+  logoP: {
+    color: '#666',
+    fontSize: '14px',
+    margin: 0,
+  } as CSSProperties,
+  formGroup: {
+    marginBottom: '20px',
+  } as CSSProperties,
+  label: {
+    display: 'block',
+    marginBottom: '8px',
+    fontWeight: 500,
+    color: '#333',
+    fontSize: '14px',
+  } as CSSProperties,
+  input: {
+    width: '100%',
+    padding: '12px',
+    border: '1px solid #ddd',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  } as CSSProperties,
+  fileInputLabel: {
+    display: 'block',
+    padding: '12px',
+    border: '2px dashed #ddd',
+    borderRadius: '6px',
+    textAlign: 'center' as const,
+    cursor: 'pointer',
+  } as CSSProperties,
+  fileName: {
+    marginTop: '8px',
+    fontSize: '12px',
+    color: '#666',
+  } as CSSProperties,
+  formRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '20px',
+  } as CSSProperties,
+  checkboxGroup: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    marginBottom: '15px',
+  } as CSSProperties,
+  checkbox: {
+    width: 'auto',
+    marginRight: '10px',
+    marginTop: '4px',
+    cursor: 'pointer',
+  } as CSSProperties,
+  checkboxLabel: {
+    marginBottom: 0,
+    fontSize: '13px',
+    lineHeight: '1.4',
+    cursor: 'pointer',
+  } as CSSProperties,
+  rgpdSection: {
+    background: '#f0f4ff',
+    padding: '15px',
+    borderRadius: '6px',
+    margin: '20px 0',
+    borderLeft: '4px solid #667eea',
+  } as CSSProperties,
+  rgpdH4: {
+    color: '#667eea',
+    fontSize: '14px',
+    marginBottom: '12px',
+    margin: 0,
+  } as CSSProperties,
+  button: {
+    width: '100%',
+    padding: '14px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '16px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  } as CSSProperties,
+  alert: {
+    padding: '12px',
+    borderRadius: '6px',
+    marginBottom: '20px',
+    fontSize: '14px',
+  } as CSSProperties,
+  alertError: {
+    background: '#fee',
+    color: '#c33',
+    border: '1px solid #fcc',
+  } as CSSProperties,
+  alertSuccess: {
+    background: '#efe',
+    color: '#3c3',
+    border: '1px solid #cfc',
+  } as CSSProperties,
+  alertWarning: {
+    background: '#fef3cd',
+    color: '#664d03',
+    border: '1px solid #ffecb5',
+  } as CSSProperties,
+  loading: {
+    display: 'none' as const,
+    textAlign: 'center' as const,
+    color: '#667eea',
+    fontSize: '14px',
+  } as CSSProperties,
+  spinner: {
+    display: 'inline-block',
+    width: '16px',
+    height: '16px',
+    border: '2px solid #667eea',
+    borderTopColor: 'transparent',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
+    marginRight: '8px',
+  } as CSSProperties,
+  helpText: {
+    fontSize: '12px',
+    color: '#999',
+    marginTop: '4px',
+  } as CSSProperties,
+  required: {
+    color: '#c33',
+  } as CSSProperties,
+} as const;
 
 export default function InscriptionTransporteur() {
   useEffect(() => {
@@ -112,7 +272,7 @@ export default function InscriptionTransporteur() {
 
   return (
     <>
-      <style jsx>{`
+      <style>{`
         * {
           margin: 0;
           padding: 0;
@@ -127,125 +287,14 @@ export default function InscriptionTransporteur() {
           justify-content: center;
           padding: 20px;
         }
-        .container {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-          width: 100%;
-          max-width: 550px;
-          padding: 40px;
-          margin: 0 auto;
-        }
-        .logo {
-          text-align: center;
-          margin-bottom: 30px;
-        }
-        .logo h1 {
-          font-size: 24px;
-          color: #667eea;
-          margin-bottom: 8px;
-        }
-        .logo p {
-          color: #666;
-          font-size: 14px;
-        }
-        .form-group {
-          margin-bottom: 20px;
-        }
-        label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: 500;
-          color: #333;
-          font-size: 14px;
-        }
-        input, select, textarea {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 14px;
-          font-family: inherit;
-          transition: border-color 0.3s;
-        }
         input:focus, select:focus, textarea:focus {
           outline: none;
           border-color: #667eea;
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        .file-input-label {
-          display: block;
-          padding: 12px;
-          border: 2px dashed #ddd;
-          border-radius: 6px;
-          text-align: center;
-          cursor: pointer;
-          transition: border-color 0.3s;
-        }
         .file-input-label:hover {
           border-color: #667eea;
           background: rgba(102, 126, 234, 0.05);
-        }
-        input[type="file"] {
-          display: none;
-        }
-        .file-name {
-          margin-top: 8px;
-          font-size: 12px;
-          color: #666;
-        }
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-        }
-        .checkbox-group {
-          display: flex;
-          align-items: flex-start;
-          margin-bottom: 15px;
-        }
-        input[type="checkbox"] {
-          width: auto;
-          margin-right: 10px;
-          margin-top: 4px;
-          cursor: pointer;
-        }
-        .checkbox-group label {
-          margin-bottom: 0;
-          font-size: 13px;
-          line-height: 1.4;
-          cursor: pointer;
-        }
-        .checkbox-group a {
-          color: #667eea;
-          text-decoration: none;
-        }
-        .checkbox-group a:hover {
-          text-decoration: underline;
-        }
-        .rgpd-section {
-          background: #f0f4ff;
-          padding: 15px;
-          border-radius: 6px;
-          margin: 20px 0;
-          border-left: 4px solid #667eea;
-        }
-        .rgpd-section h4 {
-          color: #667eea;
-          font-size: 14px;
-          margin-bottom: 12px;
-        }
-        button {
-          width: 100%;
-          padding: 14px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: transform 0.2s, box-shadow 0.2s;
         }
         button:hover {
           transform: translateY(-2px);
@@ -256,90 +305,52 @@ export default function InscriptionTransporteur() {
           cursor: not-allowed;
           transform: none;
         }
-        .alert {
-          padding: 12px;
-          border-radius: 6px;
-          margin-bottom: 20px;
-          font-size: 14px;
-        }
-        .alert-error {
-          background: #fee;
-          color: #c33;
-          border: 1px solid #fcc;
-        }
-        .alert-success {
-          background: #efe;
-          color: #3c3;
-          border: 1px solid #cfc;
-        }
-        .alert-warning {
-          background: #fef3cd;
-          color: #664d03;
-          border: 1px solid #ffecb5;
-        }
-        .loading {
-          display: none;
-          text-align: center;
+        .checkbox-group a {
           color: #667eea;
-          font-size: 14px;
+          text-decoration: none;
         }
-        .spinner {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          border: 2px solid #667eea;
-          border-top-color: transparent;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          margin-right: 8px;
+        .checkbox-group a:hover {
+          text-decoration: underline;
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        .help-text {
-          font-size: 12px;
-          color: #999;
-          margin-top: 4px;
-        }
-        .required {
-          color: #c33;
-        }
       `}</style>
 
-      <div className="container">
-        <div className="logo">
-          <h1>MobiLoireConnect41</h1>
-          <p>Inscription Transporteur</p>
+      <div style={styles.container}>
+        <div style={styles.logo}>
+          <h1 style={styles.logoH1}>MobiLoireConnect41</h1>
+          <p style={styles.logoP}>Inscription Transporteur</p>
         </div>
 
         <div id="alerts"></div>
 
         <form id="inscriptionForm">
-          <div className="form-group">
-            <label htmlFor="nom">Nom complet <span className="required">*</span></label>
-            <input type="text" id="nom" name="nom" required placeholder="Dupont Jean" />
+          <div style={styles.formGroup}>
+            <label style={styles.label} htmlFor="nom">Nom complet <span style={styles.required}>*</span></label>
+            <input style={styles.input} type="text" id="nom" name="nom" required placeholder="Dupont Jean" />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="telephone">Téléphone <span className="required">*</span></label>
-              <input type="tel" id="telephone" name="telephone" required placeholder="07 83 62 76 51" />
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label} htmlFor="telephone">Téléphone <span style={styles.required}>*</span></label>
+              <input style={styles.input} type="tel" id="telephone" name="telephone" required placeholder="07 83 62 76 51" />
             </div>
-            <div className="form-group">
-              <label htmlFor="email">Email <span className="required">*</span></label>
-              <input type="email" id="email" name="email" required placeholder="vous@example.com" />
+            <div style={styles.formGroup}>
+              <label style={styles.label} htmlFor="email">Email <span style={styles.required}>*</span></label>
+              <input style={styles.input} type="email" id="email" name="email" required placeholder="vous@example.com" />
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="siren">SIREN/SIRET <span className="required">*</span></label>
-              <input type="text" id="siren" name="siren" required placeholder="12345678901234" maxLength={14} />
-              <div className="help-text">10 (SIREN) ou 14 (SIRET) chiffres</div>
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label} htmlFor="siren">SIREN/SIRET <span style={styles.required}>*</span></label>
+              <input style={styles.input} type="text" id="siren" name="siren" required placeholder="12345678901234" maxLength={14} />
+              <div style={styles.helpText}>10 (SIREN) ou 14 (SIRET) chiffres</div>
             </div>
-            <div className="form-group">
-              <label htmlFor="type">Type véhicule <span className="required">*</span></label>
-              <select id="type" name="type" required>
+            <div style={styles.formGroup}>
+              <label style={styles.label} htmlFor="type">Type véhicule <span style={styles.required}>*</span></label>
+              <select style={styles.input} id="type" name="type" required>
                 <option value="">Choisir...</option>
                 <option value="Taxi">Taxi</option>
                 <option value="VTC">VTC</option>
@@ -348,67 +359,67 @@ export default function InscriptionTransporteur() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="licence">Licence de circulation (PDF/JPG/PNG) <span className="required">*</span></label>
-            <label htmlFor="licence" className="file-input-label">
+          <div style={styles.formGroup}>
+            <label style={styles.label} htmlFor="licence">Licence de circulation (PDF/JPG/PNG) <span style={styles.required}>*</span></label>
+            <label htmlFor="licence" style={styles.fileInputLabel} className="file-input-label">
               📄 Cliquez pour uploader votre licence
             </label>
             <input type="file" id="licence" name="licence" accept=".pdf,.jpg,.jpeg,.png" required />
-            <div className="file-name" id="fileName"></div>
-            <div className="help-text">Max 5 MB · La licence délivrée par la préfecture suffit</div>
+            <div style={styles.fileName} id="fileName"></div>
+            <div style={styles.helpText}>Max 5 MB · La licence délivrée par la préfecture suffit</div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="dateExpiration">Date d'expiration de la licence <span className="required">*</span></label>
-            <input type="date" id="dateExpiration" name="dateExpiration" required />
-            <div className="help-text">Vos données seront conservées jusqu'à cette date</div>
+          <div style={styles.formGroup}>
+            <label style={styles.label} htmlFor="dateExpiration">Date d'expiration de la licence <span style={styles.required}>*</span></label>
+            <input style={styles.input} type="date" id="dateExpiration" name="dateExpiration" required />
+            <div style={styles.helpText}>Vos données seront conservées jusqu'à cette date</div>
           </div>
 
-          <div className="rgpd-section">
-            <h4>🔒 Consentement et Protection des Données (RGPD)</h4>
+          <div style={styles.rgpdSection}>
+            <h4 style={styles.rgpdH4}>🔒 Consentement et Protection des Données (RGPD)</h4>
 
-            <div className="checkbox-group">
-              <input type="checkbox" id="consentRGPD" name="consentRGPD" required />
-              <label htmlFor="consentRGPD">
+            <div style={styles.checkboxGroup} className="checkbox-group">
+              <input style={styles.checkbox} type="checkbox" id="consentRGPD" name="consentRGPD" required />
+              <label style={styles.checkboxLabel} htmlFor="consentRGPD">
                 J'accepte le traitement de mes données personnelles conformément à la
                 <a href="/politique-confidentialite" target="_blank"> politique de confidentialité</a>
-                <span className="required">*</span>
+                <span style={styles.required}>*</span>
               </label>
             </div>
 
-            <div className="checkbox-group">
-              <input type="checkbox" id="consentNotifications" name="consentNotifications" defaultChecked />
-              <label htmlFor="consentNotifications">
+            <div style={styles.checkboxGroup} className="checkbox-group">
+              <input style={styles.checkbox} type="checkbox" id="consentNotifications" name="consentNotifications" defaultChecked />
+              <label style={styles.checkboxLabel} htmlFor="consentNotifications">
                 J'accepte de recevoir un email et/ou SMS avec mon identifiant et code PIN
               </label>
             </div>
 
-            <div className="checkbox-group">
-              <input type="checkbox" id="consentMarketing" name="consentMarketing" />
-              <label htmlFor="consentMarketing">
+            <div style={styles.checkboxGroup} className="checkbox-group">
+              <input style={styles.checkbox} type="checkbox" id="consentMarketing" name="consentMarketing" />
+              <label style={styles.checkboxLabel} htmlFor="consentMarketing">
                 J'accepte de recevoir des communications marketing et mises à jour (optionnel)
               </label>
             </div>
 
-            <div className="checkbox-group">
-              <input type="checkbox" id="licenceValide" name="licenceValide" required />
-              <label htmlFor="licenceValide">
+            <div style={styles.checkboxGroup} className="checkbox-group">
+              <input style={styles.checkbox} type="checkbox" id="licenceValide" name="licenceValide" required />
+              <label style={styles.checkboxLabel} htmlFor="licenceValide">
                 Je confirme que ma licence est valide et accordée par la préfecture
-                <span className="required">*</span>
+                <span style={styles.required}>*</span>
               </label>
             </div>
           </div>
 
-          <div className="loading" id="loading">
-            <span className="spinner"></span> Envoi en cours...
+          <div style={{ ...styles.loading, display: 'none' }} id="loading" className="loading">
+            <span style={styles.spinner} className="spinner"></span> Envoi en cours...
           </div>
 
-          <button type="submit" id="submitBtn">S'inscrire</button>
+          <button style={styles.button} type="submit" id="submitBtn">S'inscrire</button>
         </form>
 
         <p style={{ textAlign: 'center', color: '#999', fontSize: '12px', marginTop: '20px' }}>
           ✓ Vous serez contacté sous 24h avec votre identifiant et code PIN.<br />
-          ✓ Vos données sont protégées conformément au RGPD.
+          ✓ Vos données sont protégés conformément au RGPD.
         </p>
       </div>
     </>
