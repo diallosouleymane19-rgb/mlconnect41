@@ -102,28 +102,29 @@ async function addToGoogleSheet(
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: googleSheetId,
-      range: 'Transporteurs!A:Q',
+      range: 'Transporteurs!A:R',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [
           [
             id, // A: ID
             nom, // B: Nom
-            telephone, // C: Téléphone
-            email, // D: Email
-            siren, // E: SIREN/SIRET
-            type, // F: Type véhicule
-            pin, // G: Code PIN
-            new Date().toISOString().split('T')[0], // H: Date inscription
-            'attente', // I: Statut
-            '', // J: Commentaires admin
-            '', // K: Code_PIN (existing column, leave empty)
-            '', // L: stripe_account_id (existing column, leave empty)
-            '', // M: (existing column, leave empty)
+            type, // C: Type
+            '', // D: Commune
+            telephone, // E: Telephone
+            email, // F: Email
+            '', // G: Zone_couverte
+            'Non', // H: Disponible (Non tant que licence non validée)
+            '', // I: Photo_URL
+            '', // J: Tarif_base_€
+            '', // K: onesignal_player_id
+            pin, // L: Code_PIN
+            '', // M: stripe_account_id
             dateExpiration, // N: Date expiration licence
             consentRGPD ? 'oui' : 'non', // O: Consent RGPD
             consentNotifications ? 'oui' : 'non', // P: Consent Notifications
             consentMarketing ? 'oui' : 'non', // Q: Consent Marketing
+            siren, // R: SIREN/SIRET
           ],
         ],
       },
@@ -343,12 +344,18 @@ export async function POST(request: NextRequest) {
 
     const sheetData = await sheets.spreadsheets.values.get({
       spreadsheetId: googleSheetId,
-      range: 'Transporteurs!B:E',
+      range: 'Transporteurs!A:R',
     });
 
     const rows = sheetData.data.values || [];
+    const normPhone = (t: string) => (t || '').replace(/\D/g, '');
     for (const row of rows) {
-      if (row[2] === email || row[1] === telephone || row[3] === siren) {
+      // E (index 4) = Telephone, F (index 5) = Email, R (index 17) = SIREN
+      if (
+        (row[5] && row[5].toLowerCase() === email.toLowerCase()) ||
+        (row[4] && normPhone(row[4]) === normPhone(telephone)) ||
+        (row[17] && row[17] === siren)
+      ) {
         return NextResponse.json(
           { error: 'Email, téléphone ou SIREN déjà enregistré' },
           { status: 400 }
