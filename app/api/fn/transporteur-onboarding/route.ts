@@ -44,6 +44,7 @@ async function findMaxTransporterId(): Promise<number> {
         client_email: serviceAccountEmail,
         client_id: '',
       } as any,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     }),
   });
 
@@ -94,6 +95,7 @@ async function addToGoogleSheet(
         client_email: serviceAccountEmail,
         client_id: '',
       } as any,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     }),
   });
 
@@ -335,6 +337,7 @@ export async function POST(request: NextRequest) {
           client_email: serviceAccountEmail,
           client_id: '',
         } as any,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       }),
     });
 
