@@ -431,8 +431,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('Error in transporteur-onboarding:', err);
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: 'Erreur serveur lors de l\'inscription' },
+      { error: 'Erreur serveur lors de l\'inscription', detail },
       { status: 500 }
     );
   }
