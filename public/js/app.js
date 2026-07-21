@@ -639,7 +639,7 @@ function showPanel(name) {
 
 function chooseRole(role) {
   if (role === 'transporteur') {
-    showPanel('login');
+    showPanel('transporteur-choice');
   } else {
     showToast('Bientot disponible', 'info');
   }

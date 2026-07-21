@@ -257,7 +257,7 @@ export default function InscriptionTransporteur() {
           showAlert(`✓ Inscrit avec succès! ID: ${data.id} · Vérifiez vos emails/SMS pour votre PIN.`, 'success');
           form.reset();
           fileNameDiv.textContent = '';
-          setTimeout(() => window.location.href = '/transporteur', 3000);
+          setTimeout(() => window.location.href = '/', 3000);
         } else {
           showAlert(data.error || 'Erreur lors de l\'inscription', 'error');
         }

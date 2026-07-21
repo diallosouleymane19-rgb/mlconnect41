@@ -44,6 +44,33 @@
   </div>
 </div>
 
+<!-- ═══════════════ PANEL CHOIX TRANSPORTEUR ═══════════════ -->
+<div id="panel-transporteur-choice" class="panel" hidden>
+  <div class="home-wrap">
+    <div class="home-logo">
+      <img src="/icons/logo-real.png" alt="MobiLoireConnect41" class="home-logo-img">
+      <p class="home-sub" style="color:rgba(255,255,255,.7);margin-top:.2rem;">Espace Transporteur</p>
+    </div>
+    <div class="home-roles">
+      <button class="role-btn role-transporteur" onclick="window.location.href='/inscription'">
+        <span class="role-icon">📝</span>
+        <span class="role-label">Inscription</span>
+        <span class="role-arrow">›</span>
+      </button>
+      <button class="role-btn role-transporteur" onclick="showPanel('login')">
+        <span class="role-icon">🔑</span>
+        <span class="role-label">Se connecter</span>
+        <span class="role-arrow">›</span>
+      </button>
+      <button class="role-btn" onclick="showPanel('home')" style="opacity:.75;">
+        <span class="role-icon">‹</span>
+        <span class="role-label">Retour</span>
+      </button>
+    </div>
+    <p class="home-footer">SMD GLOBAL CONSULTING LLC - MobiLoireConnect41@2026</p>
+  </div>
+</div>
+
 <!-- ═══════════════════ PANEL LOGIN ═══════════════════ -->
 <div id="panel-login" class="panel" hidden>
   <div class="login-wrap">
