@@ -71,7 +71,7 @@ const styles = {
   } as CSSProperties,
   formRow: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
     gap: '20px',
   } as CSSProperties,
   checkboxGroup: {
