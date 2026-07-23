@@ -6,7 +6,7 @@
 :root {
   --navy:    #1a3a5c;
   --navy-lt: #2a5a8c;
-  --gold:    #e8a820;
+  --gold:    #f5c518;
   --green:   #22a663;
   --red:     #dc3545;
   --orange:  #e07b00;
@@ -15,7 +15,7 @@
   --text:    #1a1a2e;
   --muted:   #6c757d;
   --border:  #dde3eb;
-  --r:       12px;
+  --r:       16px;
   --shadow:  0 2px 14px rgba(0,0,0,.08);
 }
 

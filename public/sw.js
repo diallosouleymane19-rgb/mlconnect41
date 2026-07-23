@@ -4,7 +4,7 @@
 //       + /api/* jamais intercepte (routes Next : /api/distance, /api/adresses/search)
 //       + HTML en network-first pour ne plus servir un index.html perime
 
-const CACHE  = 'mlc41-transporteur-v22';;
+const CACHE  = 'mlc41-transporteur-v23';;
 const ASSETS = ['/', '/index.html', '/style.css', '/js/app.js', '/js/autocomplete.js', '/manifest.json'];
 
 self.addEventListener('install', (evt) => {
